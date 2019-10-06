@@ -1,5 +1,3 @@
-# wcs
-Wearable Computing Systems Project
+# Vitameter
+Wearable Computing Systems Project, now turned into a practical course
 
-Will we make it? We will make it. Probably.
-Let's go!
