@@ -52,14 +52,18 @@
 #define SKIN_TYPE_5				60	// actually >60
 
 
-// Version 10 //Pins as in WCS_Version5
-#define	VIBRATION_PIN			2
-#define LEDBLUE_PIN				23 // Bluetooth
-#define	LEDGREEN_PIN			16 // Power
-#define LEDRED_PIN				15 // Warning
+// Version Basel //Pins as in WCS_Version10
+#define	VIBRATION_PIN			27 //2
+
+// LED pins
+#define LEDBLUE_PIN				15 // 16 // Bluetooth
+#define	LEDGREEN_PIN			16 //2 // Power
+#define LEDRED_PIN				39 // 15 // Warning
+
 // Button pins
 #define POWER_PIN				36
-#define BLUETOOTH_PIN			34
+#define BLUETOOTH_PIN			39// 34
+// #define WARNING_PIN				23
 #define PRESSED_BUTTON_LEVEL	0
 
 #define SENSORS_EN_PIN			13
@@ -81,7 +85,9 @@
 
 
 // Pedometer
-#define Z_PIN 							32
+#define X_PIN 							33
+#define Y_PIN 							32
+#define Z_PIN 							35
 #define PEDO_CALIBRATION_SAMPLE_SIZE 	15
 #define PEDO_SAMPLE_SIZE 				15
 #define ACCL							50000

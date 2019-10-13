@@ -3,13 +3,19 @@
 
 #include "Arduino.h"
 
-// #include "WProgram.h"
-
 #include <EEPROM.h>
 #include <stdio.h>
 using namespace std;
 #include <string>
 #include <iostream>
+
+
+
+#define CO2_STORAGE_SIZE		100
+#define VOC_STORAGE_SIZE		100
+#define TEMP_STORAGE_SIZE		100
+#define UVI_STORAGE_SIZE		100
+
 
 
 class Values {

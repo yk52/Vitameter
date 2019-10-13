@@ -1,4 +1,6 @@
-#include "C:\Users\Yumi\Desktop\wcs\Values\Values.h"
+#include "Values.h"
+#include "C:\Users\Yumi\Desktop\Vitameter\config.h"
+
 
 
 /**************************************************************************/

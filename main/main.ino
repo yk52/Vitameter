@@ -1,5 +1,5 @@
 /*
-  Main class for the Vitameter.
+  Main class for the Vitameter Basel
 */
 
 #include <Wire.h>
@@ -12,7 +12,7 @@
 #include <Adafruit_ADXL335.h>
 #include <InterfaceOut.h>
 #include <Values.h>
-#include "C:\Users\Yumi\Desktop\wcs\config.h"
+#include "C:\Users\Yumi\Desktop\Vitameter\config.h"
 
 // For debugging reasons. Keep defines to see currently measured values shown over according channel.
 // #define SHOW_BT_SERIAL
@@ -20,6 +20,10 @@
 #define SHOW_BLE
 
 uint8_t state = LIGHT_SLEEP;
+/*
+void setup() {}
+void loop() {}
+*/
 
 // Bluetooth related
 BluetoothSerial btSerial;
