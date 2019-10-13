@@ -61,7 +61,6 @@ volatile uint32_t btDebounceTimer = 0;
 volatile uint32_t btButtonPressed = 0;
 volatile uint32_t powerButtonPressed = 0;
 
-
 // other timers
 uint32_t ms = 0;
 uint32_t warningTimeout = 0;
@@ -93,8 +92,11 @@ void setup() {
   // Buttons init
   pinMode(POWER_PIN, INPUT);
   pinMode(BLUETOOTH_PIN, INPUT);
+  // pinMode(WARNING_PIN, INPUT); // TODO add later
 
   // ADC init
+  pinMode(X_PIN, INPUT);
+  pinMode(Y_PIN, INPUT);
   pinMode(Z_PIN, INPUT);
   
   // Thresholds for sensor values init
