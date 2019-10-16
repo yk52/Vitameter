@@ -34,6 +34,13 @@
 #define TEMP_FLASH_IDX_ADDR_LO		16
 #define TEMP_FLASH_IDX_ADDR_HI		17
 
+// Storage size in RAM
+#define CO2_ARRAY_SIZE		200
+#define VOC_ARRAY_SIZE		200
+#define TEMP_ARRAY_SIZE		200
+#define UVI_ARRAY_SIZE		200
+
+// Storage size in Flash in Bytes
 #define CO2_STORAGE_SIZE		36000	// Possible to store measurements every 5 sec for 24 h ( = 17280). CO2 needs 2 Byte
 #define VOC_STORAGE_SIZE		18000
 #define TEMP_STORAGE_SIZE		18000

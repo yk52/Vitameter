@@ -11,13 +11,6 @@ using namespace std;
 
 
 
-#define CO2_STORAGE_SIZE		100
-#define VOC_STORAGE_SIZE		100
-#define TEMP_STORAGE_SIZE		100
-#define UVI_STORAGE_SIZE		100
-
-
-
 class Values {
 	public:
 		//constructors
@@ -71,13 +64,13 @@ class Values {
 		bool getCO2Flag(void);
 
 		// Ram Storage arrays
-		uint16_t co2[CO2_STORAGE_SIZE] = {0};  // in ppm. in flash memory, its divided by 100 to fit in a byte
+		uint16_t co2[CO2_ARRAY_SIZE] = {0};  // in ppm. in flash memory, its divided by 100 to fit in a byte
 		uint16_t co2_idx;
-		uint16_t voc[VOC_STORAGE_SIZE] = {0}; // in ppb, bzw. mg/m3
+		uint16_t voc[VOC_ARRAY_SIZE] = {0}; // in ppb, bzw. mg/m3
 		uint16_t voc_idx;
-		uint8_t uvi[UVI_STORAGE_SIZE] = {0};   // UV index
+		uint8_t uvi[UVI_ARRAY_SIZE] = {0};   // UV index
 		uint16_t uvi_idx;
-		float temp[TEMP_STORAGE_SIZE] = {0}; // in degrees
+		float temp[TEMP_ARRAY_SIZE] = {0}; // in degrees
 		uint16_t temp_idx;
 		uint16_t steps;
 
