@@ -107,7 +107,7 @@ void setup() {
   sensors.on();
   delay(500);
   pedo.calibrate();
-  values.pedoEnable = 1;
+  values.pedoEnable = 0;
   ble.init("Vitameter low energy");
 }
 

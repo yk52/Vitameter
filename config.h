@@ -8,7 +8,7 @@
 #define BAUDRATE			9600
 
 // FLASH_____________________
-#define FLASH_SIZE				3000000 // 3 MB
+#define FLASH_SIZE				3500000 // 3.5 MB
 #define VALUES_SET_ADDR			0
 #define CO2_THRESH_ADDR			1
 #define UVI_DUR_THRESH_ADDR		2
@@ -19,9 +19,12 @@
 #define STEP_GOAL_ADDR_HI		7
 
 // Store current FLASH storage index before going to sleep and every 150 min
-// 2 Bytes necessary because index <= 1000
+
+// Steps are directly saved into the memory
 #define STEPS_FLASH_ADDR_LO			8
 #define STEPS_FLASH_ADDR_HI			9
+
+// Index is relative to IDX_START
 #define CO2_FLASH_IDX_ADDR_LO		10
 #define CO2_FLASH_IDX_ADDR_HI		11
 #define VOC_FLASH_IDX_ADDR_LO		12
@@ -31,15 +34,20 @@
 #define TEMP_FLASH_IDX_ADDR_LO		16
 #define TEMP_FLASH_IDX_ADDR_HI		17
 
+#define CO2_STORAGE_SIZE		36000	// Possible to store measurements every 5 sec for 24 h ( = 17280). CO2 needs 2 Byte
+#define VOC_STORAGE_SIZE		18000
+#define TEMP_STORAGE_SIZE		18000
+#define UVI_STORAGE_SIZE		18000
 
-#define CO2_FLASH_IDX_START			1000
-#define CO2_FLASH_IDX_STOP			5999
-#define VOC_FLASH_IDX_START			10000
-#define VOC_FLASH_IDX_STOP			14999
-#define UVI_FLASH_IDX_START			18000
-#define UVI_FLASH_IDX_STOP			22999
-#define TEMP_FLASH_IDX_START		26000
-#define TEMP_FLASH_IDX_STOP			50999
+// Some buffer is left between the designated memories in case saving goes wrong.
+#define CO2_FLASH_IDX_START			100
+#define CO2_FLASH_IDX_STOP			100 + CO2_STORAGE_SIZE
+#define VOC_FLASH_IDX_START			40000
+#define VOC_FLASH_IDX_STOP			40000 + VOC_STORAGE_SIZE
+#define UVI_FLASH_IDX_START			60000
+#define UVI_FLASH_IDX_STOP			60000 + UVI_STORAGE_SIZE
+#define TEMP_FLASH_IDX_START		80000
+#define TEMP_FLASH_IDX_STOP			80000 + TEMP_STORAGE_SIZE
 
 
 // _____________________
@@ -52,17 +60,17 @@
 #define SKIN_TYPE_5				60	// actually >60
 
 
-// Version Basel //Pins as in WCS_Version10
-#define	VIBRATION_PIN			27 //2
+//Pins as in WCS_Version10 // Version Basel
+#define	VIBRATION_PIN			35 // 27
 
 // LED pins
-#define LEDBLUE_PIN				15 // 16 // Bluetooth
-#define	LEDGREEN_PIN			16 //2 // Power
-#define LEDRED_PIN				39 // 15 // Warning
+#define LEDBLUE_PIN				23 //16 // Bluetooth
+#define	LEDGREEN_PIN			16 // 2 // Power
+#define LEDRED_PIN				15 // 15// Warning
 
 // Button pins
 #define POWER_PIN				36
-#define BLUETOOTH_PIN			39// 34
+#define BLUETOOTH_PIN			34// 39
 // #define WARNING_PIN				23
 #define PRESSED_BUTTON_LEVEL	0
 
@@ -74,14 +82,9 @@
 
 // Frequencies
 #define PEDO_FREQ				30
-#define AQ_FREQ					3000	// 3s for demo. actually 10 min
-#define UV_FREQ					3000	// 3s for demo. actually 1 min
+#define AQ_FREQ					60000	// 3s for demo. actually 10 min
+#define UV_FREQ					6000	// 3s for demo. actually 1 min
 
-
-#define CO2_STORAGE_SIZE		100
-#define VOC_STORAGE_SIZE		100
-#define TEMP_STORAGE_SIZE		100
-#define UVI_STORAGE_SIZE		100
 
 
 // Pedometer

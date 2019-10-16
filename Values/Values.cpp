@@ -372,7 +372,6 @@ void Values::resetSteps(void) {
 }
 
 
-
 void Values::storeUVI(uint8_t val) {
 	uvi[uvi_idx++] = val;
 	if (val >= uviThresh) {
@@ -412,6 +411,7 @@ void Values::setCurrentUVIFlashIdx(uint16_t idx) {
 	EEPROM.write(UVI_FLASH_IDX_ADDR_HI, HI);
 }
 
+
 bool Values::storeRAMToFlash(void) {
 	bool overflow = 0;
 
@@ -421,7 +421,7 @@ bool Values::storeRAMToFlash(void) {
     EEPROM.write(STEPS_FLASH_ADDR_LO, stepLo);
     EEPROM.write(STEPS_FLASH_ADDR_HI, stepHi);
 
-    // Store CO2, TVOC and Temperature
+    // Store Data from CCS811: CO2, TVOC and Temperature
     uint16_t co2Flash_idx = getCurrentCO2FlashIdx();
     uint16_t vocFlash_idx = getCurrentVOCFlashIdx();
     uint16_t tempFlash_idx = getCurrentTempFlashIdx();
@@ -432,7 +432,12 @@ bool Values::storeRAMToFlash(void) {
     		break;
     	}
     	else {
-    		EEPROM.write(co2Flash_idx++, co2[i]/100);
+    	    // Store CO2. First store Hi, then Lo. (e.g. Flash[0] = Hi, Flash[1] = Lo)
+    	    uint8_t CO2Lo = co2[i] & 0xFF;
+    	    uint8_t CO2Hi = (co2[i] >> 8) & 0xFF;
+    		EEPROM.write(co2Flash_idx++, CO2Hi);
+    		EEPROM.write(co2Flash_idx++, CO2Lo);
+    		// Store the rest
     		EEPROM.write(vocFlash_idx++, voc[i]);
     		EEPROM.write(tempFlash_idx++, temp[i]);
     		setCurrentCO2FlashIdx(co2Flash_idx);
@@ -491,29 +496,29 @@ std::string Values::getUint16AsString(uint16_t value) {
 
 std::string Values::prepareDataFromArrays() {
 	std::string data = "CO2: ";
-	int i;
-	for (i = 0; i < CO2_STORAGE_SIZE; i++) {							// get data current array 		length ???
+	int idx = getCurrentUVICO2Idx();
+	for (int i = 0; i < idx; i++) {							// get data current array 		length ???
 		data += getUint16AsString(co2[i]);
 		data += " ";
 	}
 
-	int j;
+	idx = getCurrentVOCFlashIdx();
 	data += "VOC: ";
-	for (j = 0; j < VOC_STORAGE_SIZE; j++) {							// get data current array 		length ???
+	for (int j = 0; j < idx; j++) {							// get data current array 		length ???
 		data += getUint16AsString(voc[j]);
 		data += " ";
 	}
 
-	int k;
+	idx = getCurrentUVIFlashIdx();
 	data += "UVI: ";
-	for (k = 0; k < UVI_STORAGE_SIZE; k++) {							// get data current array 		length ???
+	for (int k = 0; k < idx; k++) {							// get data current array 		length ???
 		data += getUint8AsString(uvi[k]);
 		data += " ";
 	}
 
-	int l;
+	idx = getCurrentTempFlashIdx();
 	data += "TEMP: ";
-	for (l = 0; l < TEMP_STORAGE_SIZE; l++) {							// get data current array 		length ???
+	for (int l = 0; l < idx; l++) {							// get data current array 		length ???
 		data += getUint8AsString(temp[l]);
 		data += " ";
 	}
