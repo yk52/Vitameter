@@ -52,6 +52,7 @@ InterfaceOut sensors(SENSORS_EN_PIN);
 
 bool firstBoot = 1;
 bool reactivateWarning = 0;
+uint8_t lastWarnState = 0;
 
 // Button related
 volatile bool checkBT = 0;
@@ -107,7 +108,7 @@ void setup() {
   sensors.on();
   delay(500);
   pedo.calibrate();
-  values.pedoEnable = 0;
+  values.pedoEnable = 1;
   ble.init("Vitameter low energy");
 }
 
@@ -117,8 +118,92 @@ void setup() {
 void loop() {
   ms = millis();
 
+//****** TODO
+  if (ms > bleTimer) {
+    bleTimer = ms + bleMsgFreq;
+    if (values.initBtSerial) {
+      Serial.println("initBtSerial");
+      btSerial.begin("Vitameter serial");
+      values.initBtSerial = 0;
+    }
+    if (values.dataWanted_all) {
+      Serial.println("all data wanted");
+      btSerial.println(values.prepareAllData().c_str());
+      //values.dataWanted_all = 0;  TODO
+    }
+    if (values.dataWanted_CO2) {
+      Serial.println("CO2 Data wanted");
+      btSerial.println(values.prepareCO2Data().c_str());
+      values.dataWanted_CO2 = 0;
+    } else if (values.dataWanted_UVI) {
+      Serial.println("UVI Data wanted");
+      btSerial.println(values.prepareUVIData().c_str());
+      values.dataWanted_UVI = 0;
+    } else if (values.dataWanted_steps) {
+      Serial.println("Steps Data wanted");
+      btSerial.println(values.prepareStepData().c_str());
+      values.dataWanted_steps = 0;
+    } else {
+      sent = ble.getMessage();
+      processed = values.processMessage(sent);
+      ble.write(processed);
+
+      if (sent != oldSent) {
+        Serial.print("sent");
+        Serial.println(sent.c_str());
+        Serial.print("message processed:   ");
+        Serial.println(processed.c_str());
+        Serial.print("parameter:   ");
+        Serial.println(values.parameter.c_str());
+        Serial.print("value is:   ");
+        Serial.println(values._value);
+        Serial.println("");
+        Serial.println("");
+        oldSent = sent;
+      }
+    }
+  
+   if (ms > bleShow) {
+      bleShow = ms + 3000;
+      
+#ifdef SHOW_BLE
+      msg = "";
+      msg = "Measurement number: ";
+      msg += values.getUint8AsString(values.uvi_idx);
+      msg += "\n";
+      ble.write(msg);
+      msg = "CO2: ";
+      msg += values.getUint16AsString(values.getLastCO2());
+      msg += "\n";
+      ble.write(msg);
+      msg = "TVOC: ";
+      msg += values.getUint8AsString(values.getLastVOC());
+      msg += "\n";
+      ble.write(msg);
+      msg = "UVI: ";
+      msg += values.getUint8AsString(values.getLastUVI());
+      msg += "\n";
+      ble.write(msg);
+      msg = "Steps: ";
+      msg += values.getUint16AsString(values.getLastStep());
+      msg += "\n";
+      msg += "\n";
+      ble.write(msg);
+#endif
+    }
+  }  
+  
+  // *******
+
+  /*
   if (checkBT || checkPower) {
     checkButtonState();
+  }
+
+  if (values.warning) {
+    ledRed.on();
+  } else {
+    ledRed.off();
   }
 
   if (reactivateWarning && ms > warningTimeout) {
@@ -146,6 +231,7 @@ void loop() {
     else {
       warningCounter = 0;
     }
+    
     if (values.pedoEnable && ms > pedoTimeout) {
       uint16_t x = pedo.getPedo();
       
@@ -337,6 +423,7 @@ void loop() {
 #endif
     }
   }  
+  */
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -492,8 +579,8 @@ void bluetoothButtonISR() {
   }
 }
 
-void sensorsInit() {
-  bool error = 0;
+void sensorsInit() {  // TODO
+  /*bool error = 0;
   sensors.on();
   delay(500); 
   pedo.calibrate();
@@ -530,7 +617,7 @@ void sensorsInit() {
     ccs.setTempOffset(t - 23.0);
     firstBoot = 0;
   }
-  
+  */
 }
 
 void handleWarning() {

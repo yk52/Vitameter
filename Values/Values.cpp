@@ -412,6 +412,7 @@ void Values::setCurrentUVIFlashIdx(uint16_t idx) {
 }
 
 
+// Returns 1, if data is lost due to overflow.
 bool Values::storeRAMToFlash(void) {
 	bool overflow = 0;
 
@@ -495,28 +496,28 @@ std::string Values::getUint16AsString(uint16_t value) {
 }
 
 std::string Values::prepareDataFromArrays() {
-	std::string data = "CO2: ";
+	std::string data = "CO2 Array: ";
 	for (int i = 0; i < co2_idx++; i++) {							// get data current array 		length ???
 		data += getUint16AsString(co2[i]);
 		data += " ";
 	}
 
 	idx = getCurrentVOCFlashIdx();
-	data += "VOC: ";
+	data += "VOC Array: ";
 	for (int j = 0; j < voc_idx; j++) {							// get data current array
 		data += getUint16AsString(voc[j]);
 		data += " ";
 	}
 
 	idx = getCurrentUVIFlashIdx();
-	data += "UVI: ";
+	data += "UVI Array: ";
 	for (int k = 0; k < uvi_idx; k++) {							// get data current array
 		data += getUint8AsString(uvi[k]);
 		data += " ";
 	}
 
 	idx = getCurrentTempFlashIdx();
-	data += "Temp: ";
+	data += "Temp Array: ";
 	for (int l = 0; l < temp_idx; l++) {							// get data current array
 		data += getUint8AsString(temp[l]);
 		data += " ";
@@ -544,7 +545,7 @@ std::string Values::prepareAllData() {
 			data += "\n";
 		}
 	}
-	data += "CO2 Array: ";
+	data += "CO2 Array: ";	// TODO necessary? I'd rather ommit this part
 	for (int i = 0; i < co2_idx; i++) {							// get data current array 		length ???
 		data += getUint16AsString(co2[i]);
 		data += "\n";
