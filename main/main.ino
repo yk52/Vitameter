@@ -7,10 +7,6 @@
 #include <BLE_wcs.h>
 #include <stdio.h>
 #include <string>
-#include <Adafruit_CCS811.h>
-#include <Adafruit_VEML6075.h>
-#include <Adafruit_ADXL335.h>
-#include <InterfaceOut.h>
 #include <Values.h>
 #include "C:\Users\Yumi\Desktop\Vitameter\config.h"
 
@@ -20,10 +16,6 @@
 #define SHOW_BLE
 
 uint8_t state = LIGHT_SLEEP;
-/*
-void setup() {}
-void loop() {}
-*/
 
 // Bluetooth related
 BluetoothSerial btSerial;
@@ -37,18 +29,6 @@ uint32_t bleShow = 0;
 uint32_t bleShowFreq = 3000;
 uint32_t bleMsgFreq = 3000;
 bool bluetoothOn = 0;
-
-
-Values values;
-Adafruit_CCS811 ccs;
-Adafruit_VEML6075 uv = Adafruit_VEML6075();
-Adafruit_ADXL335 pedo;
-
-InterfaceOut vib(VIBRATION_PIN);
-InterfaceOut ledRed(LEDRED_PIN);
-InterfaceOut ledGreen(LEDGREEN_PIN);
-InterfaceOut ledBlue(LEDBLUE_PIN);
-InterfaceOut sensors(SENSORS_EN_PIN);
 
 bool firstBoot = 1;
 bool reactivateWarning = 0;
@@ -89,25 +69,9 @@ void setup() {
 
   // I2C communication to sensors init
   Wire.begin(SDA_PIN, SCL_PIN);
-
-  // Buttons init
-  pinMode(POWER_PIN, INPUT);
-  pinMode(BLUETOOTH_PIN, INPUT);
-  // pinMode(WARNING_PIN, INPUT); // TODO add later
-
-  // ADC init
-  pinMode(X_PIN, INPUT);
-  pinMode(Y_PIN, INPUT);
-  pinMode(Z_PIN, INPUT);
   
   // Thresholds for sensor values init
-  values.init();
-  values.warnCO2 = 1;
-  values.warnVOC = 1;
-  values.warnUVI = 1;
-  sensors.on();
   delay(500);
-  pedo.calibrate();
   values.pedoEnable = 1;
   ble.init("Vitameter low energy");
 }
@@ -118,7 +82,7 @@ void setup() {
 void loop() {
   ms = millis();
 
-//****** TODO
+//****** Abgespeckte Version für BLE programmierung Annette
   if (ms > bleTimer) {
     bleTimer = ms + bleMsgFreq;
     if (values.initBtSerial) {
@@ -193,7 +157,7 @@ void loop() {
     }
   }  
   
-  // *******
+  // ******* not needed for ble prototype
 
   /*
   if (checkBT || checkPower) {
@@ -428,6 +392,10 @@ void loop() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/* 
+ *  Functions:
+ */
+ 
 void goLightSleepTimeout(uint64_t sleepMillis) {
   esp_sleep_enable_timer_wakeup(sleepMillis * 1000);
   esp_light_sleep_start();
