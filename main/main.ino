@@ -3,7 +3,6 @@
 */
 
 #include <Wire.h>
-#include <BluetoothSerial.h>
 #include <BLE_wcs.h>
 #include <stdio.h>
 #include <string>
@@ -15,7 +14,6 @@
 #include "C:\Users\Yumi\Desktop\Vitameter\config.h"
 
 // For debugging reasons. Keep defines to see currently measured values shown over according channel.
-// #define SHOW_BT_SERIAL
 #define SHOW_SERIAL
 #define SHOW_BLE
 
@@ -26,7 +24,6 @@ void loop() {}
 */
 
 // Bluetooth related
-BluetoothSerial btSerial;
 BLE_wcs ble;
 std::string sent;
 std::string oldSent;
@@ -245,27 +242,24 @@ void loop() {
   if (bluetoothOn) {
     if (ms > bleTimer) {
       bleTimer = ms + bleMsgFreq;
-      if (values.initBtSerial) {
-        Serial.println("initBtSerial");
-        btSerial.begin("Vitameter serial");
-        values.initBtSerial = 0;
-      }
+
       if (values.dataWanted_all) {
+        // Send over UART
         Serial.println("all data wanted");
-        btSerial.println(values.prepareAllData().c_str());
-        //values.dataWanted_all = 0;  TODO
+        Serial.println(values.prepareAllData().c_str());
+        values.dataWanted_all = 0;  // Why TODO here? Hört es auf zu senden wenn 0 gesetzt wird?
       }
       if (values.dataWanted_CO2) {
         Serial.println("CO2 Data wanted");
-        btSerial.println(values.prepareCO2Data().c_str());
+        Serial.println(values.prepareCO2Data().c_str());
         values.dataWanted_CO2 = 0;
       } else if (values.dataWanted_UVI) {
         Serial.println("UVI Data wanted");
-        btSerial.println(values.prepareUVIData().c_str());
+        Serial.println(values.prepareUVIData().c_str());
         values.dataWanted_UVI = 0;
       } else if (values.dataWanted_steps) {
         Serial.println("Steps Data wanted");
-        btSerial.println(values.prepareStepData().c_str());
+        Serial.println(values.prepareStepData().c_str());
         values.dataWanted_steps = 0;
       } else {
         sent = ble.getMessage();
@@ -313,27 +307,6 @@ void loop() {
       msg += "\n";
       msg += "\n";
       ble.write(msg);
-#endif
-
-#ifdef SHOW_BT_SERIAL
-      msg = "";
-      msg = "Measurement number: ";
-      msg += values.getUint8AsString(values.uvi_idx);
-      msg += "\n";
-      msg += "CO2: ";
-      msg += values.getUint16AsString(values.getLastCO2());
-      msg += "\n";
-      msg += "TVOC: ";
-      msg += values.getUint8AsString(values.getLastVOC());
-      msg += "\n";
-      msg += "UVI: ";
-      msg += values.getUint8AsString(values.getLastUVI());
-      msg += "\n";
-      msg += "Steps: ";
-      msg += values.getUint16AsString(values.getLastStep());
-      msg += "\n";
-      msg += "\n";
-      btSerial.println(msg.c_str());
 #endif
     }
   }  
@@ -427,7 +400,6 @@ void checkButtonState() {
       if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
         if (bluetoothOn) {
             bluetoothOn = 0;
-            btSerial.end();
             values.resetSteps();
             ledBlue.off();
             Serial.println("BT off");

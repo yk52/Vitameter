@@ -5,7 +5,7 @@
 #define SENSORS_ACTIVE		1
 #define ONLY_BT				2
 
-#define BAUDRATE			9600
+#define BAUDRATE			115200
 
 // FLASH_____________________
 #define FLASH_SIZE				3500000 // 3.5 MB
