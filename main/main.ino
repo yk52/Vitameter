@@ -400,6 +400,7 @@ void checkButtonState() {
       if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
         if (bluetoothOn) {
             bluetoothOn = 0;
+            values.clearAllMemory();  // TODO change later. Now here to test.
             values.resetSteps();
             ledBlue.off();
             Serial.println("BT off");

@@ -52,6 +52,14 @@ void Values::setFlashIndexToStart(void) {
 	EEPROM.commit();
 }
 
+void Values::clearAllMemory(void) {
+	setFlashIndexToStart();
+	co2_idx = 0;
+	voc_idx = 0;
+	uvi_idx = 0;
+	temp_idx = 0;
+}
+
 void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
