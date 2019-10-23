@@ -32,6 +32,9 @@ bool warnCO2 = 1;
 uint8_t uviDuration = 0;
 bool pedoEnable = 0;
 
+uint32_t aqFreq = AQ_FREQ;
+uint32_t uvFreq = UV_FREQ;
+
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
 	EEPROM.write(CO2_FLASH_IDX_ADDR_LO, CO2_FLASH_IDX_START & 0xFF);
@@ -72,7 +75,6 @@ void Values::init(void) {
 
 		// Set Flash storage indices
 		setFlashIndexToStart();
-
 	}
 
 	else if (thresholdsSet == 1) {
@@ -85,6 +87,21 @@ void Values::init(void) {
 	}
 }
 
+void Values::setAQFreq(uint32_t val) {
+
+}
+
+void Values::setUVFreq(uint32_t val) {
+
+}
+
+uint16_t Values::getAQFreq(uint32_t val) {
+
+}
+
+uint16_t Values::getUVFreq(uint32_t val) {
+
+}
 
 void Values::setUVIFlag(void) {
 	warning |= uviMask;
@@ -761,6 +778,12 @@ std::string Values::prepareStepData() {
 		} else if (parameter.compare("setStepGoal") == 0) {
 			setStepGoal(value);
 			return "setStepGoal";
+		} else if (parameter.compare("setUvFreq") == 0) {	// TODO or whatever annette wants
+			setUVFreq(value);
+			return "setUvFreq";
+		} else if (parameter.compare("setAqFreq") == 0) {
+			setAQFreq(value);
+			return "setStepGoal";
 		} else if (parameter.compare("setSunscreenFactor") == 0) {
 			// Todo: setSunsreenFactor(value);
 			return "todo: setSunscreenFactor";
@@ -774,6 +797,10 @@ std::string Values::prepareStepData() {
 	} else if (rxValue.find("get") != -1) {
 		if (rxValue.compare("getTest") == 0) {
 			return getParameterAsString(testThresh);
+		} else if (rxValue.compare("getUVFreq") == 0) {
+			return getParameterAsString(uvFreq);
+		} else if (rxValue.compare("getAQFreq") == 0) {
+			return getParameterAsString(aqFreq);
 		} else if (rxValue.compare("getCo2Thresh") == 0) {
 			return getParameterAsString(co2Thresh);
 		} else if (rxValue.compare("getVocThresh") == 0) {

@@ -27,6 +27,9 @@ class Values {
 		uint8_t uviDuration;
 		uint16_t stepGoal;
 
+		uint32_t aqFreq;
+		uint32_t uvFreq;
+
 		// data requested flag
 		bool dataRequested = false;
 
@@ -75,6 +78,10 @@ class Values {
 		uint16_t steps;
 
 		bool pedoEnable;
+
+		// Set measurement Frequencies. val is in seconds
+		void setAQFreq(uint32_t val);
+		void setUVFreq(uint32_t val);
 
 		// Set Threshold values
 		void setCO2Thresh(uint16_t val);

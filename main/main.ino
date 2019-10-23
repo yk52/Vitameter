@@ -177,13 +177,13 @@ void loop() {
     }
     
     if (ms > uvTimeout) {
-      uvTimeout += UV_FREQ;
+      uvTimeout += values.uvFreq;
       uint8_t u = uv.readUVI();
       values.storeUVI(u);
     }
     if (ms > airTimeout) {
       ccs.readData();
-      airTimeout += AQ_FREQ;
+      airTimeout += values.aqFreq;
       uint16_t c = ccs.geteCO2();
       uint16_t v = ccs.getTVOC();
       values.storeCO2(c);

@@ -34,6 +34,12 @@
 #define TEMP_FLASH_IDX_ADDR_LO		16
 #define TEMP_FLASH_IDX_ADDR_HI		17
 
+// Measurement Frequency
+#define UV_FREQ_ADDR_LO				18
+#define UV_FREQ_ADDR_HI				19
+#define AQ_FREQ_ADDR_LO				20
+#define AQ_FREQ_ADDR_HI				21
+
 // Storage size in RAM
 #define CO2_ARRAY_SIZE		200
 #define VOC_ARRAY_SIZE		200
