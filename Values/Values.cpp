@@ -687,7 +687,7 @@ std::string Values::prepareCO2Data() {
 std::string Values::prepareVOCData() {
 	std::string data = "";
 	data += "VOC Flash: ";
-	currentFlashIdx = getCurrentVOCFlashIdx();
+	uint16_t currentFlashIdx = getCurrentVOCFlashIdx();
 	if (currentFlashIdx != VOC_FLASH_IDX_START) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
 		int address = VOC_FLASH_IDX_START;
 		int i;
@@ -709,8 +709,8 @@ std::string Values::prepareVOCData() {
 
 std::string Values::prepareTempData() {
 	std::string data = "";
-	data += "Temp FLASH"
-	currentFlashIdx = getCurrentTempFlashIdx();
+	data += "Temp Flash";
+	uint16_t currentFlashIdx = getCurrentTempFlashIdx();
 	if (currentFlashIdx != TEMP_FLASH_IDX_START) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
 		int address = TEMP_FLASH_IDX_START;
 		int i;
@@ -733,7 +733,7 @@ std::string Values::prepareTempData() {
 std::string Values::prepareUVIData() {
 	std::string data = "";
 	data += "UVI Flash: ";
-	currentFlashIdx = getCurrentUVIFlashIdx();
+	uint16_t currentFlashIdx = getCurrentUVIFlashIdx();
 	if (currentFlashIdx != UVI_FLASH_IDX_START) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
 		int address = UVI_FLASH_IDX_START;
 		int i;
