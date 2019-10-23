@@ -2,7 +2,7 @@
 #define VALUES_H_
 
 #include "Arduino.h"
-
+#include "C:\Users\Yumi\Desktop\Vitameter\config.h"
 #include <EEPROM.h>
 #include <stdio.h>
 using namespace std;
@@ -67,21 +67,21 @@ class Values {
 		bool getCO2Flag(void);
 
 		// Ram Storage arrays
-		uint16_t co2[CO2_ARRAY_SIZE] = {0};  // in ppm. in flash memory, its divided by 100 to fit in a byte
+		uint16_t co2[200] = {0};  // in ppm. in flash memory, its divided by 100 to fit in a byte
 		uint16_t co2_idx;
-		uint16_t voc[VOC_ARRAY_SIZE] = {0}; // in ppb, bzw. mg/m3
+		uint16_t voc[200] = {0}; // in ppb, bzw. mg/m3
 		uint16_t voc_idx;
-		uint8_t uvi[UVI_ARRAY_SIZE] = {0};   // UV index
+		uint8_t uvi[200] = {0};   // UV index
 		uint16_t uvi_idx;
-		float temp[TEMP_ARRAY_SIZE] = {0}; // in degrees
+		float temp[200] = {0}; // in degrees
 		uint16_t temp_idx;
 		uint16_t steps;
 
 		bool pedoEnable;
 
 		// Set measurement Frequencies. val is in seconds
-		void setAQFreq(uint32_t val);
-		void setUVFreq(uint32_t val);
+		void setAQFreq(uint16_t val);
+		void setUVFreq(uint16_t val);
 
 		// ... and get them
 		uint16_t getAQFreq(void);

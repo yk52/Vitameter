@@ -1,5 +1,5 @@
 #include "Values.h"
-#include "C:\Users\Yumi\Desktop\Vitameter\config.h"
+
 
 
 
@@ -90,23 +90,35 @@ void Values::init(void) {
 }
 
 void Values::setAQFreq(uint16_t val) {
-	// Enter seconds.
-
+	// val is in seconds. *1000 to get millis
+	aqFreq = val*1000;
+	uint8_t LO = aqFreq & 0xFF;
+	uint8_t HI = (aqFreq >> 8) & 0xFF;
+	EEPROM.write(AQ_FREQ_ADDR_LO, LO);
+	EEPROM.write(AQ_FREQ_ADDR_HI, HI);
 }
 
 void Values::setUVFreq(uint16_t val) {
-
+	// val is in seconds. *1000 to get millis
+	uvFreq = val*1000;
+	uint8_t LO = uvFreq & 0xFF;
+	uint8_t HI = (uvFreq >> 8) & 0xFF;
+	EEPROM.write(UV_FREQ_ADDR_LO, LO);
+	EEPROM.write(UV_FREQ_ADDR_HI, HI);
 }
 
 uint16_t Values::getAQFreq(void) {
-	uint8_t LO = EEPROM.read(STEP_GOAL_ADDR_LO);
-	uint16_t HI = EEPROM.read(STEP_GOAL_ADDR_HI);
+	uint8_t LO = EEPROM.read(AQ_FREQ_ADDR_LO);
+	uint16_t HI = EEPROM.read(AQ_FREQ_ADDR_HI);
 	uint16_t freq = (HI << 8) | LO;
 	return freq;
 }
 
 uint16_t Values::getUVFreq(void) {
-
+	uint8_t LO = EEPROM.read(UV_FREQ_ADDR_LO);
+	uint16_t HI = EEPROM.read(UV_FREQ_ADDR_HI);
+	uint16_t freq = (HI << 8) | LO;
+	return freq;
 }
 
 void Values::setUVIFlag(void) {
@@ -518,27 +530,25 @@ std::string Values::getUint16AsString(uint16_t value) {
 }
 
 std::string Values::prepareDataFromArrays() {
+
 	std::string data = "CO2: ";
-	for (int i = 0; i < co2_idx++; i++) {							// get data current array 		length ???
+	for (int i = 0; i < co2_idx; i++) {							// get data current array 		length ???
 		data += getUint16AsString(co2[i]);
 		data += " ";
 	}
 
-	idx = getCurrentVOCFlashIdx();
 	data += "VOC: ";
 	for (int j = 0; j < voc_idx; j++) {							// get data current array
 		data += getUint16AsString(voc[j]);
 		data += " ";
 	}
 
-	idx = getCurrentUVIFlashIdx();
 	data += "UVI: ";
 	for (int k = 0; k < uvi_idx; k++) {							// get data current array
 		data += getUint8AsString(uvi[k]);
 		data += " ";
 	}
 
-	idx = getCurrentTempFlashIdx();
 	data += "Temp: ";
 	for (int l = 0; l < temp_idx; l++) {							// get data current array
 		data += getUint8AsString(temp[l]);
@@ -563,7 +573,7 @@ std::string Values::prepareAllData() {
 			uint16_t valueHi = EEPROM.read(address++);
 			uint8_t valueLo = EEPROM.read(address++);
 			uint16_t value16 = (valueHi << 8) | valueLo;
-			data += getUint8AsString(value16);
+			data += getUint16AsString(value16);
 			data += "\n";
 		}
 	}
