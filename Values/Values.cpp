@@ -84,22 +84,28 @@ void Values::init(void) {
 		uviThresh = getUVIThresh();
 		uviDurationThresh = getUVIDurationThresh();
 		stepGoal = getStepGoal();
+		uvFreq = getUVFreq() * 1000;
+		aqFreq = getAQFreq() * 1000;
 	}
 }
 
-void Values::setAQFreq(uint32_t val) {
+void Values::setAQFreq(uint16_t val) {
+	// Enter seconds.
 
 }
 
-void Values::setUVFreq(uint32_t val) {
+void Values::setUVFreq(uint16_t val) {
 
 }
 
-uint16_t Values::getAQFreq(uint32_t val) {
-
+uint16_t Values::getAQFreq(void) {
+	uint8_t LO = EEPROM.read(STEP_GOAL_ADDR_LO);
+	uint16_t HI = EEPROM.read(STEP_GOAL_ADDR_HI);
+	uint16_t freq = (HI << 8) | LO;
+	return freq;
 }
 
-uint16_t Values::getUVFreq(uint32_t val) {
+uint16_t Values::getUVFreq(void) {
 
 }
 
