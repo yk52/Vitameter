@@ -84,7 +84,7 @@
 // Button pins
 #define POWER_PIN				36
 #define BLUETOOTH_PIN			34// 39
-// #define WARNING_PIN				23	// TODO add back in
+#define WARNING_PIN				23	// TODO add back in
 #define PRESSED_BUTTON_LEVEL	0
 
 #define SENSORS_EN_PIN			13

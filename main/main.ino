@@ -33,7 +33,6 @@ uint32_t bleTimer = 0;
 uint32_t bleShow = 0;
 uint32_t bleShowFreq = 3000;
 uint32_t bleMsgFreq = 3000;
-bool bluetoothOn = 0;
 
 
 Values values;
@@ -53,11 +52,12 @@ bool reactivateWarning = 0;
 // Button related
 volatile bool checkBT = 0;
 volatile bool checkPW = 0;
+volatile bool checkWA = 0;
 volatile uint32_t powerDebounceTimer = 0;
 volatile uint32_t btDebounceTimer = 0;
 volatile uint32_t waDebounceTimer = 0;
 volatile uint32_t btButtonPressed = 0;
-volatile uint32_t powerButtonPressed = 0;
+volatile uint32_t pwButtonPressed = 0;
 volatile uint32_t waButtonPressed = 0;
 
 // other timers
@@ -116,7 +116,7 @@ void setup() {
 void loop() {
   ms = millis();
 
-  if (checkBT || checkPW) {
+  if (checkBT || checkPW || checkWA) {
     checkButtonState();
   }
 
@@ -141,6 +141,7 @@ void loop() {
       // Send over UART
       Serial.println("all data wanted");
       Serial.println(values.prepareAllData().c_str());
+      // TODO something like "while not done" needed?
       values.dataWanted_all = 0;  // Why TODO here? Hört es auf zu senden wenn 0 gesetzt wird?
     }
     if (values.dataWanted_CO2) {
@@ -262,7 +263,7 @@ void loop() {
     
     //_____ Go sleep until next timeout ________________________________
 
-    if (!(checkBT || checkPW) && !values.pedoEnable && !bluetoothOn && !values.warning) {
+    if (!(checkBT || checkPW) && !values.pedoEnable && !values.warning) {
       ms = millis();
       if (uvTimeout > ms) {
         uint32_t timeLeft = uvTimeout - ms;
@@ -276,7 +277,7 @@ void loop() {
           if (esp_sleep_get_wakeup_cause() == 7) {
             if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
               checkPW = 1; 
-              powerButtonPressed = ms;
+              pwButtonPressed = ms;
             } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
               checkBT = 1; 
               btButtonPressed = ms;
@@ -406,12 +407,12 @@ void checkButtonState() {
   
   // Check Bluetooth button
   if (checkBT) {
-    if (ms > btButtonPressed + 1500) {
+    if (ms > btButtonPressed + 1200) {
       checkBT = 0;
       if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
         if (bluetoothOn) {
             bluetoothOn = 0;
-            values.clearAllMemory();  // TODO change later. Now here to test.
+            // values.clearAllMemory();  // TODO change later. Now here to test.
             values.resetSteps();
             ledBlue.off();
             Serial.println("BT off");
@@ -427,8 +428,7 @@ void checkButtonState() {
           values.dataWanted_all = 1;
         }
       }
-    }
-    else if (ms > btButtonPressed + 500) {
+    } else if (ms > btButtonPressed + 300) {
       if (digitalRead(BLUETOOTH_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkBT = 0;
         if (values.warning) {
@@ -440,7 +440,7 @@ void checkButtonState() {
   }
   // Check Power Button
   if (checkPW) {
-    if (ms > powerButtonPressed + 1500) {
+    if (ms > pwButtonPressed + 1200) {
       checkPW = 0;
       if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
         if (state == SENSORS_ACTIVE) {
@@ -454,15 +454,42 @@ void checkButtonState() {
           setTimeouts();
         }
       }     
+    } else if (ms > pwButtonPressed + 300) {
+      if (digitalRead(POWER_PIN) == !PRESSED_BUTTON_LEVEL) {
+        checkPW = 0;
+      }
     }
   }
+  
+  // Check Warning Button
+  if (checkWA) {
+    if (ms > waButtonPressed + 1200) {
+      checkWA = 0;
+      if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+        if (state == SENSORS_ACTIVE) {
+          state = LIGHT_SLEEP;  
+        }
+        else {
+          // Wake up sensors.
+          state = SENSORS_ACTIVE;
+          ledGreen.on();
+          sensorsInit();
+          setTimeouts();
+        }
+      }     
+    } else if (ms > waButtonPressed + 300) {
+      if (digitalRead(WARNING_PIN) == !PRESSED_BUTTON_LEVEL) {
+        checkWA = 0;
+      }
+    }
+  }  
 }
 
 void pwButtonISR() {
   ms = millis();
   if (powerDebounceTimer < ms) {
     powerDebounceTimer = ms + 100;
-    powerButtonPressed = ms;
+    pwButtonPressed = ms;
     checkPW = 1;
   }
 }
