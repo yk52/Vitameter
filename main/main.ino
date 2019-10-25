@@ -52,11 +52,13 @@ bool reactivateWarning = 0;
 
 // Button related
 volatile bool checkBT = 0;
-volatile bool checkPower = 0;
+volatile bool checkPW = 0;
 volatile uint32_t powerDebounceTimer = 0;
 volatile uint32_t btDebounceTimer = 0;
+volatile uint32_t waDebounceTimer = 0;
 volatile uint32_t btButtonPressed = 0;
 volatile uint32_t powerButtonPressed = 0;
+volatile uint32_t waButtonPressed = 0;
 
 // other timers
 uint32_t ms = 0;
@@ -104,7 +106,7 @@ void setup() {
   sensors.on();
   delay(500);
   pedo.calibrate();
-  values.pedoEnable = 0;
+  values.pedoEnable = 1;
   ble.init("Vitameter low energy");
 }
 
@@ -114,7 +116,7 @@ void setup() {
 void loop() {
   ms = millis();
 
-  if (checkBT || checkPower) {
+  if (checkBT || checkPW) {
     checkButtonState();
   }
 
@@ -125,7 +127,54 @@ void loop() {
     values.warnVOC = 1;
     reactivateWarning = 0;
   }
+
+  if (values.warning) {
+    ledRed.on();
+  } else {
+    ledRed.off();
+  }
   
+  if (ms > bleTimer) {
+    bleTimer = ms + bleMsgFreq;
+  
+    if (values.dataWanted_all) {
+      // Send over UART
+      Serial.println("all data wanted");
+      Serial.println(values.prepareAllData().c_str());
+      values.dataWanted_all = 0;  // Why TODO here? Hört es auf zu senden wenn 0 gesetzt wird?
+    }
+    if (values.dataWanted_CO2) {
+      Serial.println("CO2 Data wanted");
+      Serial.println(values.prepareCO2Data().c_str());
+      values.dataWanted_CO2 = 0;
+    } else if (values.dataWanted_UVI) {
+      Serial.println("UVI Data wanted");
+      Serial.println(values.prepareUVIData().c_str());
+      values.dataWanted_UVI = 0;
+    } else if (values.dataWanted_steps) {
+      Serial.println("Steps Data wanted");
+      Serial.println(values.prepareStepData().c_str());
+      values.dataWanted_steps = 0;
+    } else {
+      sent = ble.getMessage();
+      processed = values.processMessage(sent);
+      ble.write(processed);
+  
+      if (sent != oldSent) {
+        Serial.print("sent");
+        Serial.println(sent.c_str());
+        Serial.print("message processed:   ");
+        Serial.println(processed.c_str());
+        Serial.print("parameter:   ");
+        Serial.println(values.parameter.c_str());
+        Serial.print("value is:   ");
+        Serial.println(values._value);
+        Serial.println("");
+        Serial.println("");
+        oldSent = sent;
+      }
+    }
+  }  
  
   //__________________________________________________________________
   if (state == LIGHT_SLEEP) {
@@ -172,7 +221,6 @@ void loop() {
         vib.off();
       }
     }
-    
     if (ms > uvTimeout) {
       uvTimeout += values.uvFreq;
       uint8_t u = uv.readUVI();
@@ -214,23 +262,26 @@ void loop() {
     
     //_____ Go sleep until next timeout ________________________________
 
-    if (!(checkBT || checkPower) && !values.pedoEnable && !bluetoothOn && !values.warning) {
+    if (!(checkBT || checkPW) && !values.pedoEnable && !bluetoothOn && !values.warning) {
       ms = millis();
       if (uvTimeout > ms) {
         uint32_t timeLeft = uvTimeout - ms;
         if (timeLeft > 2000) {
           delay(500);
           gpio_wakeup_enable(GPIO_NUM_36, GPIO_INTR_LOW_LEVEL);
-          gpio_wakeup_enable(GPIO_NUM_34, GPIO_INTR_LOW_LEVEL); 
+          gpio_wakeup_enable(GPIO_NUM_34, GPIO_INTR_LOW_LEVEL);
+          // gpio_wakeup_enable(GPIO_NUM_23, GPIO_INTR_LOW_LEVEL); // TODO add back in on new one
           esp_sleep_enable_gpio_wakeup();
           goLightSleepTimeout(timeLeft - 500);
           if (esp_sleep_get_wakeup_cause() == 7) {
             if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
-              checkPower = 1; 
+              checkPW = 1; 
               powerButtonPressed = ms;
-            }
-            else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
+            } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
               checkBT = 1; 
+              btButtonPressed = ms;
+            } else if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+              checkWA = 1; 
               btButtonPressed = ms;
             }
           }
@@ -240,47 +291,7 @@ void loop() {
   }
  //___Bluetooth low energy  communication on (is always on) ____________________________________
   if (bluetoothOn) {
-    if (ms > bleTimer) {
-      bleTimer = ms + bleMsgFreq;
-
-      if (values.dataWanted_all) {
-        // Send over UART
-        Serial.println("all data wanted");
-        Serial.println(values.prepareAllData().c_str());
-        values.dataWanted_all = 0;  // Why TODO here? Hört es auf zu senden wenn 0 gesetzt wird?
-      }
-      if (values.dataWanted_CO2) {
-        Serial.println("CO2 Data wanted");
-        Serial.println(values.prepareCO2Data().c_str());
-        values.dataWanted_CO2 = 0;
-      } else if (values.dataWanted_UVI) {
-        Serial.println("UVI Data wanted");
-        Serial.println(values.prepareUVIData().c_str());
-        values.dataWanted_UVI = 0;
-      } else if (values.dataWanted_steps) {
-        Serial.println("Steps Data wanted");
-        Serial.println(values.prepareStepData().c_str());
-        values.dataWanted_steps = 0;
-      } else {
-        sent = ble.getMessage();
-        processed = values.processMessage(sent);
-        ble.write(processed);
-
-        if (sent != oldSent) {
-          Serial.print("sent");
-          Serial.println(sent.c_str());
-          Serial.print("message processed:   ");
-          Serial.println(processed.c_str());
-          Serial.print("parameter:   ");
-          Serial.println(values.parameter.c_str());
-          Serial.print("value is:   ");
-          Serial.println(values._value);
-          Serial.println("");
-          Serial.println("");
-          oldSent = sent;
-        }
-      }
-    }
+ 
    if (ms > bleShow) {
       bleShow = ms + 3000;
       
@@ -380,13 +391,13 @@ void wakeUp() {
   }
   else {
     // Ignore if button is pressed less than a second
-    Serial.println("Nevermind. Button pressed < 1 s");
     state = LIGHT_SLEEP;
     return;
   }
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_GPIO);
-  attachInterrupt(digitalPinToInterrupt(POWER_PIN), buttonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN), bluetoothButtonISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(POWER_PIN), pwButtonISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN), btButtonISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(WARNING_PIN), waButtonISR, FALLING);
   Serial.println("Good morning!");
 }
 
@@ -412,7 +423,8 @@ void checkButtonState() {
         else {
           bluetoothOn = 1;
           ledBlue.on();
-          Serial.println("BT on");
+          Serial.println("dataWantel_all");
+          values.dataWanted_all = 1;
         }
       }
     }
@@ -427,9 +439,9 @@ void checkButtonState() {
     }
   }
   // Check Power Button
-  if (checkPower) {
+  if (checkPW) {
     if (ms > powerButtonPressed + 1500) {
-      checkPower = 0;
+      checkPW = 0;
       if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
         if (state == SENSORS_ACTIVE) {
           state = LIGHT_SLEEP;  
@@ -446,22 +458,31 @@ void checkButtonState() {
   }
 }
 
-void buttonISR() {
+void pwButtonISR() {
   ms = millis();
   if (powerDebounceTimer < ms) {
     powerDebounceTimer = ms + 100;
     powerButtonPressed = ms;
-    checkPower = 1;
+    checkPW = 1;
   }
 }
 
-void bluetoothButtonISR() {
+void btButtonISR() {
   ms = millis();
   // If bluetooth on
   if (btDebounceTimer < ms) {
     btDebounceTimer = ms + 100;
     btButtonPressed = ms;
     checkBT = 1;
+  }
+}
+
+void waButtonISR() {
+  ms = millis();
+  if (waDebounceTimer < ms) {
+    waDebounceTimer = ms + 100;
+    waButtonPressed = ms;
+    checkWA = 1;
   }
 }
 

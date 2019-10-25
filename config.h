@@ -84,7 +84,7 @@
 // Button pins
 #define POWER_PIN				36
 #define BLUETOOTH_PIN			34// 39
-// #define WARNING_PIN				23
+// #define WARNING_PIN				23	// TODO add back in
 #define PRESSED_BUTTON_LEVEL	0
 
 #define SENSORS_EN_PIN			13
@@ -95,8 +95,8 @@
 
 // Frequencies
 #define PEDO_FREQ				30
-#define AQ_FREQ					60000	// 3s for demo. actually 10 min
-#define UV_FREQ					6000	// 3s for demo. actually 1 min
+#define AQ_FREQ					3000	// 3s for demo. actually 10 min
+#define UV_FREQ					3000	// 3s for demo. actually 1 min
 
 
 
