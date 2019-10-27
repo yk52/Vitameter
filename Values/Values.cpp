@@ -17,6 +17,7 @@ bool dataWanted_all = 0;
 bool dataWanted_CO2 = 0;
 bool dataWanted_UVI = 0;
 bool dataWanted_steps = 0;
+bool clearMemory = 0;
 
 // SRAM storage index
 uint16_t co2_idx = 0;
@@ -54,6 +55,7 @@ void Values::setFlashIndexToStart(void) {
 
 void Values::clearAllMemory(void) {
 	setFlashIndexToStart();
+	steps = 0;
 	co2_idx = 0;
 	voc_idx = 0;
 	uvi_idx = 0;
@@ -769,10 +771,14 @@ std::string Values::prepareStepData() {
 }
 
  std::string Values::processMessage(std::string rxValue) {
+	 if (rxValue.find("empty") != -1) {
+		 clearMemory = true;
+		 return "clearMemory";
+
 	/*********************************************************************************
 	*									setters
 	*********************************************************************************/
-	if (rxValue.find("set") != -1) {
+	 } else if (rxValue.find("set") != -1) {
 		cut = rxValue.find(":");
 	    parameter = rxValue.substr(0, cut);
 		_stdStringValue = rxValue.substr(cut+1, -1);

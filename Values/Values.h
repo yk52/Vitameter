@@ -30,6 +30,7 @@ class Values {
 		uint32_t aqFreq;
 		uint32_t uvFreq;
 
+		bool clearMemory = false;
 		// data requested flag
 		bool dataRequested = false;
 

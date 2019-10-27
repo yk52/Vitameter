@@ -14,7 +14,7 @@
 #include "C:\Users\Yumi\Desktop\Vitameter\config.h"
 
 // For debugging reasons. Keep defines to see currently measured values shown over according channel.
-#define SHOW_SERIAL
+// #define SHOW_SERIAL
 #define SHOW_BLE
 
 uint8_t state = LIGHT_SLEEP;
@@ -34,7 +34,6 @@ uint32_t bleShow = 0;
 uint32_t bleShowFreq = 3000;
 uint32_t bleMsgFreq = 3000;
 
-
 Values values;
 Adafruit_CCS811 ccs;
 Adafruit_VEML6075 uv = Adafruit_VEML6075();
@@ -47,7 +46,7 @@ InterfaceOut ledBlue(LEDBLUE_PIN);
 InterfaceOut sensors(SENSORS_EN_PIN);
 
 bool firstBoot = 1;
-bool reactivateWarning = 0;
+bool ignoreWarning = 0;
 
 // Button related
 volatile bool checkBT = 0;
@@ -61,6 +60,7 @@ volatile uint32_t pwButtonPressed = 0;
 volatile uint32_t waButtonPressed = 0;
 
 // other timers
+uint32_t warningMs = 900000;  // 15 min
 uint32_t ms = 0;
 uint32_t warningTimeout = 0;
 uint8_t warningCounter = 0;
@@ -119,67 +119,10 @@ void loop() {
   if (checkBT || checkPW || checkWA) {
     checkButtonState();
   }
+  checkBLE();
 
-  if (reactivateWarning && ms > warningTimeout) {
-    Serial.println("Warnings reactivated");
-    Serial.println();
-    values.warnCO2 = 1;
-    values.warnVOC = 1;
-    reactivateWarning = 0;
-  }
-
-  if (values.warning) {
-    ledRed.on();
-  } else {
-    ledRed.off();
-  }
-  
-  if (ms > bleTimer) {
-    bleTimer = ms + bleMsgFreq;
-  
-    if (values.dataWanted_all) {
-      // Send over UART
-      Serial.println("all data wanted");
-      Serial.println(values.prepareAllData().c_str());
-      // TODO something like "while not done" needed?
-      values.dataWanted_all = 0;  // Why TODO here? Hört es auf zu senden wenn 0 gesetzt wird?
-    }
-    if (values.dataWanted_CO2) {
-      Serial.println("CO2 Data wanted");
-      Serial.println(values.prepareCO2Data().c_str());
-      values.dataWanted_CO2 = 0;
-    } else if (values.dataWanted_UVI) {
-      Serial.println("UVI Data wanted");
-      Serial.println(values.prepareUVIData().c_str());
-      values.dataWanted_UVI = 0;
-    } else if (values.dataWanted_steps) {
-      Serial.println("Steps Data wanted");
-      Serial.println(values.prepareStepData().c_str());
-      values.dataWanted_steps = 0;
-    } else {
-      sent = ble.getMessage();
-      processed = values.processMessage(sent);
-      ble.write(processed);
-  
-      if (sent != oldSent) {
-        Serial.print("sent");
-        Serial.println(sent.c_str());
-        Serial.print("message processed:   ");
-        Serial.println(processed.c_str());
-        Serial.print("parameter:   ");
-        Serial.println(values.parameter.c_str());
-        Serial.print("value is:   ");
-        Serial.println(values._value);
-        Serial.println("");
-        Serial.println("");
-        oldSent = sent;
-      }
-    }
-  }  
- 
   //__________________________________________________________________
   if (state == LIGHT_SLEEP) {
-    
     if (values.uvi_idx >= 1) {
       values.storeRAMToFlash();
     }
@@ -187,12 +130,7 @@ void loop() {
   }
   //__________________________________________________________________
   else if (state == SENSORS_ACTIVE) {
-    if (values.warning) {
-      handleWarning();
-    }
-    else {
-      warningCounter = 0;
-    }
+    handleWarning();
     if (values.pedoEnable && ms > pedoTimeout) {
       uint16_t x = pedo.getPedo();
       
@@ -216,7 +154,7 @@ void loop() {
         vibTimeout = ms + 200;
         vibCounter++;
       }
-      if (vibCounter > 4) {
+      if (vibCounter > 2) {
         goalVib = 0;
         vibCounter= 0;
         vib.off();
@@ -261,9 +199,9 @@ void loop() {
       values.storeRAMToFlash();
     }
     
-    //_____ Go sleep until next timeout ________________________________
+    //_____ Go sleep until next timeout ________________________________ TODO wake up every 30 s?
 
-    if (!(checkBT || checkPW) && !values.pedoEnable && !values.warning) {
+    if (!(checkBT || checkPW || checkWA) && !values.pedoEnable && !values.warning) {
       ms = millis();
       if (uvTimeout > ms) {
         uint32_t timeLeft = uvTimeout - ms;
@@ -291,38 +229,37 @@ void loop() {
     }
   }
  //___Bluetooth low energy  communication on (is always on) ____________________________________
-  if (bluetoothOn) {
  
-   if (ms > bleShow) {
-      bleShow = ms + 3000;
-      
+ if (ms > bleShow) {
+    bleShow = ms + 3000;
+    
 #ifdef SHOW_BLE
-      msg = "";
-      msg = "Measurement number: ";
-      msg += values.getUint8AsString(values.uvi_idx);
-      msg += "\n";
-      ble.write(msg);
-      msg = "CO2: ";
-      msg += values.getUint16AsString(values.getLastCO2());
-      msg += "\n";
-      ble.write(msg);
-      msg = "TVOC: ";
-      msg += values.getUint8AsString(values.getLastVOC());
-      msg += "\n";
-      ble.write(msg);
-      msg = "UVI: ";
-      msg += values.getUint8AsString(values.getLastUVI());
-      msg += "\n";
-      ble.write(msg);
-      msg = "Steps: ";
-      msg += values.getUint16AsString(values.getLastStep());
-      msg += "\n";
-      msg += "\n";
-      ble.write(msg);
+    msg = "";
+    msg = "Measurement number: ";
+    msg += values.getUint8AsString(values.uvi_idx);
+    msg += "\n";
+    ble.write(msg);
+    msg = "CO2: ";
+    msg += values.getUint16AsString(values.getLastCO2());
+    msg += "\n";
+    ble.write(msg);
+    msg = "TVOC: ";
+    msg += values.getUint8AsString(values.getLastVOC());
+    msg += "\n";
+    ble.write(msg);
+    msg = "UVI: ";
+    msg += values.getUint8AsString(values.getLastUVI());
+    msg += "\n";
+    ble.write(msg);
+    msg = "Steps: ";
+    msg += values.getUint16AsString(values.getLastStep());
+    msg += "\n";
+    msg += "\n";
+    ble.write(msg);
 #endif
-    }
-  }  
-}
+  }
+}  
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -336,8 +273,8 @@ void goLightSleep() {
   Serial.println("Enter sleep");
   detachInterrupt(digitalPinToInterrupt(POWER_PIN));
   detachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN));
+  detachInterrupt(digitalPinToInterrupt(WARNING_PIN));
   delay(1000);
-  bluetoothOn = 0;
   values.clearAllWarnings();
   vib.off();
   ledGreen.off();
@@ -345,6 +282,7 @@ void goLightSleep() {
   ledBlue.off();
   gpio_wakeup_enable(GPIO_NUM_36, GPIO_INTR_LOW_LEVEL);
   gpio_wakeup_enable(GPIO_NUM_34, GPIO_INTR_LOW_LEVEL);
+  gpio_wakeup_enable(GPIO_NUM_23, GPIO_INTR_LOW_LEVEL);
   esp_sleep_enable_gpio_wakeup();
   esp_light_sleep_start();
   wakeUp();
@@ -362,7 +300,7 @@ void setTimeouts() {
 
 void wakeUp() {
   // If button still pressed after 1 second
-  delay(1000);
+  delay(800);
   
   if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
     Serial.println("WAKE UP, POWER UP!");
@@ -386,7 +324,6 @@ void wakeUp() {
   else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
     Serial.println("ONLY BLUETOOTH");
     ledBlue.on();
-    bluetoothOn = 1;
     state = ONLY_BT;
     bleTimer = millis();
   }
@@ -402,31 +339,18 @@ void wakeUp() {
   Serial.println("Good morning!");
 }
 
-void checkButtonState() {
+
+void checkButtonState(void) {
   ms = millis();
   
-  // Check Bluetooth button
+  // Check Bluetooth button. 
   if (checkBT) {
     if (ms > btButtonPressed + 1200) {
       checkBT = 0;
       if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
-        if (bluetoothOn) {
-            bluetoothOn = 0;
-            // values.clearAllMemory();  // TODO change later. Now here to test.
-            values.resetSteps();
-            ledBlue.off();
-            Serial.println("BT off");
-            if (state == ONLY_BT) {
-              Serial.println("Good Night");
-              state = LIGHT_SLEEP;
-            }
-          }
-        else {
-          bluetoothOn = 1;
-          ledBlue.on();
-          Serial.println("dataWantel_all");
-          values.dataWanted_all = 1;
-        }
+        // If pressed: start send over UART
+        ledBlue.on();
+        values.dataWanted_all = 1;
       }
     } else if (ms > btButtonPressed + 300) {
       if (digitalRead(BLUETOOTH_PIN) == !PRESSED_BUTTON_LEVEL) {
@@ -513,6 +437,65 @@ void waButtonISR() {
   }
 }
 
+void checkBLE() {
+  if (values.clearMemory) {
+    values.clearMemory = 0;
+    for (int i=0; i<4; i++) {
+      ledBlue.on();
+      delay(500);
+      ledBlue.off();
+      delay(500);
+    }
+    values.clearAllMemory();
+  }    
+  if (values.dataWanted_all) {
+    // Send over UART
+    ledBlue.on();
+    values.dataWanted_all = 0;
+    if (state == ONLY_BT) {
+      Serial.println("Good Night");
+      state = LIGHT_SLEEP;
+    }
+    Serial.println("all data wanted");
+    Serial.println(values.prepareAllData().c_str());
+    delay(1000);        // TODO something like "while not done" needed?
+    ledBlue.off();
+  }
+  if (values.dataWanted_CO2) {
+    Serial.println("CO2 Data wanted");
+    Serial.println(values.prepareCO2Data().c_str());
+    values.dataWanted_CO2 = 0;
+  } else if (values.dataWanted_UVI) {
+    Serial.println("UVI Data wanted");
+    Serial.println(values.prepareUVIData().c_str());
+    values.dataWanted_UVI = 0;
+  } else if (values.dataWanted_steps) {
+    Serial.println("Steps Data wanted");
+    Serial.println(values.prepareStepData().c_str());
+    values.dataWanted_steps = 0;
+  } else {
+    sent = ble.getMessage();
+    processed = values.processMessage(sent);
+    ble.write(processed);
+
+    if (sent != oldSent) {
+      /*
+      Serial.print("sent");
+      Serial.println(sent.c_str());
+      Serial.print("message processed:   ");
+      Serial.println(processed.c_str());
+      Serial.print("parameter:   ");
+      Serial.println(values.parameter.c_str());
+      Serial.print("value is:   ");
+      Serial.println(values._value);
+      Serial.println("");
+      Serial.println("");
+      */
+      oldSent = sent;
+    }
+  }  
+}
+
 void sensorsInit() {
   bool error = 0;
   sensors.on();
@@ -551,20 +534,32 @@ void sensorsInit() {
     ccs.setTempOffset(t - 23.0);
     firstBoot = 0;
   }
-  
 }
 
 void handleWarning() {
-  ledRed.on();
   ms = millis();
-  if (warningVibTimeout < ms) {
-    warningCounter++;
-    warningVibTimeout = ms + 500;
-    vib.toggle();
-  }
-  if (warningCounter >= 10) {
-    dismissWarning();
-  }
+  if (values.warning) {
+    ledRed.on();
+    if (!ignoreWarning && (warningVibTimeout < ms)) {
+      warningCounter++;
+      warningVibTimeout = ms + 500;
+      vib.toggle();
+    }
+    if (warningCounter >= 4) {
+      dismissWarning();
+    }    
+  } else {
+    ledRed.off();
+  }      
+  if (reactivateWarning && ms > warningTimeout) {
+    Serial.println("Warnings reactivated");
+    Serial.println();
+    values.warnCO2 = 1;
+    values.warnVOC = 1;
+    reactivateWarning = 0;
+  }  
+  
+
 }
 
 void dismissWarning() {
@@ -592,7 +587,7 @@ void dismissWarning() {
   Serial.print("Warning dismissed: ");
   Serial.println(s);
   warningCounter = 0;
-  warningTimeout = millis() + 120000; // Reactivate after 30 s
+  warningTimeout = millis() + warningMs; // Reactivate after 30 min
   reactivateWarning = 1;
   ledRed.off();
   vib.off();
