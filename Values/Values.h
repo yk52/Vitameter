@@ -29,6 +29,7 @@ class Values {
 
 		uint32_t aqFreq;
 		uint32_t uvFreq;
+		uint32_t showFreq;
 
 		bool clearMemory = false;
 		// data requested flag
@@ -80,6 +81,9 @@ class Values {
 		uint16_t steps;
 
 		bool pedoEnable;
+
+		// Set Frequencies at which to show live measurements
+		void setShowFreq(uint16_t val);
 
 		// Set measurement Frequencies. val is in seconds
 		void setAQFreq(uint16_t val);

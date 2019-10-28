@@ -29,9 +29,6 @@ std::string sent;
 std::string oldSent;
 std::string processed = "prodef";
 std::string msg = "";
-uint32_t bleShow = 0;
-uint32_t bleShowFreq = 3000;
-uint32_t bleMsgFreq = 3000;
 
 Values values;
 Adafruit_CCS811 ccs;
@@ -67,7 +64,6 @@ uint32_t warningVibTimeout = 0;
 bool goalVib = 0;
 uint8_t vibCounter = 0;
 uint32_t vibTimeout = 0;
-uint32_t showFreq = UV_FREQ;
 uint32_t sleepTime = 0;
 uint32_t lastEmptied = 0;
 uint32_t pedoTimeout = 0;
@@ -120,7 +116,7 @@ void loop() {
     ledBlue.on();
     values.dataWanted_all = 0;
 
-    ble.write("Print data over Serial Port... \n"); // TODO too long? how much are 20 bytes?
+    ble.write("Print data over Serial Port...\n"); // TODO too long? how much are 20 bytes?
     Serial.println("all data wanted. Print data over serial port!");
     Serial.println(values.prepareAllData().c_str());
     delay(1000);        // TODO something like "while not done" needed?
@@ -141,7 +137,7 @@ void loop() {
     takeMeasurements();
     if (ms > showTimeout) {
       showMeasurements();
-      showTimeout += showFreq;
+      showTimeout += values.showFreq;
     }
 
  /*   //_____ Go sleep until next timeout ________________________________ TODO wake up every 30 s? Leave this as it is for starters. keep pedo enabled to avoid this state
@@ -172,13 +168,6 @@ void loop() {
         }
       }
     }*/
-  }
- //___Bluetooth low energy  communication on (is always on) ____________________________________
- 
- if (ms > bleShow) {
-    bleShow = ms + 3000;
-    
-
   }
 }  
 
@@ -282,7 +271,7 @@ void goLightSleepTimeout(uint64_t sleepMillis) {
 }
 
 void goLightSleep() {
-  Serial.println("Enter sleep");
+  ble.write("\nEnter sleep\n");
   detachInterrupt(digitalPinToInterrupt(POWER_PIN));
   detachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN));
   detachInterrupt(digitalPinToInterrupt(WARNING_PIN));
@@ -305,8 +294,41 @@ void setTimeouts() {
   pedoTimeout = PEDO_FREQ + ms;
   uvTimeout = UV_FREQ + ms;
   airTimeout = AQ_FREQ + ms;
-  showTimeout = ms + showFreq;
-  bleShow = ms + bleShowFreq;
+  showTimeout = ms + values.showFreq;
+}
+
+void showThresholds(void) {
+  msg = "";
+  msg = "UVI thresh: ";
+  msg += values.getUint8AsString(values.getUVIThresh());
+  msg += "\n";
+  ble.write(msg);
+  msg = "CO2 thresh: ";
+  msg += values.getUint16AsString(values.getCO2Thresh());
+  msg += "\n";
+  ble.write(msg);
+  msg = "VOC thresh: ";
+  msg += values.getUint8AsString(values.getVOCThresh());
+  msg += "\n";
+  ble.write(msg);
+  msg = "Step Goal: ";
+  msg += values.getUint16AsString(values.getStepGoal());
+  msg += "\n";
+  ble.write(msg);
+
+  // ble.write("Temp thresh: ");
+  // Serial.println(EEPROM.read(TEMP_THRESH_ADDR));
+
+  Serial.print("UVI thresh: ");
+  Serial.println(values.getUVIThresh());
+  Serial.print("CO2 thresh: ");
+  Serial.println(values.getCO2Thresh());
+  Serial.print("VOC thresh: ");
+  Serial.println(values.getVOCThresh());
+  // Serial.print("Temp thresh: ");
+  // Serial.println(values.getTempThresh());
+  Serial.print("Step goal: ");
+  Serial.println(values.getStepGoal());
 }
 
 void wakeUp() {
@@ -314,20 +336,10 @@ void wakeUp() {
   delay(800);
   
   if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
-    Serial.println("WAKE UP, POWER UP!");
+    ble.write("\n WAKING UP");
+    Serial.println("WAKING UP!");
     state = SENSORS_ACTIVE;
-    Serial.print("UVI thresh: ");
-    Serial.println(EEPROM.read(UVI_THRESH_ADDR));
-    Serial.print("CO2 thresh: ");
-    Serial.println(values.getCO2Thresh());
-    Serial.print("VOC thresh: ");
-    Serial.println(EEPROM.read(VOC_THRESH_ADDR));
-    Serial.print("Temp thresh: ");
-    Serial.println(EEPROM.read(TEMP_THRESH_ADDR));
-  
-    Serial.print("Step goal: ");
-    Serial.println(values.getStepGoal());
-    
+    showThresholds();
     ledGreen.on();
     sensorsInit();
     setTimeouts();
@@ -362,7 +374,7 @@ void checkButtonState(void) {
         ledBlue.on();
         values.dataWanted_all = 1;
       }
-    } else if (ms > btButtonPressed + 300) {
+    } else if (ms > btButtonPressed + 500) {
       if (digitalRead(BLUETOOTH_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkBT = 0;
       }
@@ -384,9 +396,10 @@ void checkButtonState(void) {
           setTimeouts();
         }
       }     
-    } else if (ms > pwButtonPressed + 300) {
+    } else if (ms > pwButtonPressed + 500) {
       if (digitalRead(POWER_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkPW = 0;
+        ble.write("Still alive!\n");
       }
     }
   }
@@ -406,7 +419,7 @@ void checkButtonState(void) {
           ble.write("Warnings activated\n");
         }
       }    
-    } else if (ms > waButtonPressed + 300) {
+    } else if (ms > waButtonPressed + 500) {
       if (digitalRead(WARNING_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkWA = 0;
       }

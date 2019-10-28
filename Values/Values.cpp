@@ -35,6 +35,7 @@ bool pedoEnable = 0;
 
 uint32_t aqFreq = AQ_FREQ;
 uint32_t uvFreq = UV_FREQ;
+uint32_t bleFreq = SHOW_FREQ;
 
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
@@ -97,6 +98,11 @@ void Values::init(void) {
 		uvFreq = getUVFreq() * 1000;
 		aqFreq = getAQFreq() * 1000;
 	}
+}
+
+void Values::setShowFreq(uint16_t val) {
+	// val is in seconds. *1000 to get millis
+	bleFreq = val*1000;
 }
 
 void Values::setAQFreq(uint16_t val) {
@@ -819,6 +825,9 @@ std::string Values::prepareStepData() {
 			return "setUviDurationThresh";
 		} else if (parameter.compare("setStepGoal") == 0) {
 			setStepGoal(value);
+			return "setStepGoal";
+		} else if (parameter.compare("setShowFreq") == 0) {
+			setShowFreq(value);
 			return "setStepGoal";
 		} else if (parameter.compare("setUvFreq") == 0) {	// TODO or whatever annette wants
 			setUVFreq(value);
