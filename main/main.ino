@@ -29,7 +29,6 @@ std::string sent;
 std::string oldSent;
 std::string processed = "prodef";
 std::string msg = "";
-uint32_t bleTimer = 0;
 uint32_t bleShow = 0;
 uint32_t bleShowFreq = 3000;
 uint32_t bleMsgFreq = 3000;
@@ -100,9 +99,6 @@ void setup() {
   
   // Thresholds for sensor values init
   values.init();
-  values.warnCO2 = 1;
-  values.warnVOC = 1;
-  values.warnUVI = 1;
   sensors.on();
   delay(500);
   pedo.calibrate();
@@ -119,9 +115,19 @@ void loop() {
   if (checkBT || checkPW || checkWA) {
     checkButtonState();
   }
+  if (values.dataWanted_all) {
+    // Send over UART
+    ledBlue.on();
+    values.dataWanted_all = 0;
+
+    Serial.println("all data wanted");
+    Serial.println(values.prepareAllData().c_str());
+    delay(1000);        // TODO something like "while not done" needed?
+    ledBlue.off();
+  }
   checkBLE();
 
-  //__________________________________________________________________
+  // Light sleep mode if Vitameter is turned off_____________________
   if (state == LIGHT_SLEEP) {
     if (values.uvi_idx >= 1) {
       values.storeRAMToFlash();
@@ -256,6 +262,10 @@ void loop() {
     msg += "\n";
     msg += "\n";
     ble.write(msg);
+    if (values.warning) {
+      ble.write("Following thresholds exceeded: ");
+      
+    }
 #endif
   }
 }  
@@ -293,7 +303,6 @@ void setTimeouts() {
   pedoTimeout = PEDO_FREQ + ms;
   uvTimeout = UV_FREQ + ms;
   airTimeout = AQ_FREQ + ms;
-  
   showTimeout = ms + showFreq;
   bleShow = ms + bleShowFreq;
 }
@@ -322,10 +331,9 @@ void wakeUp() {
     setTimeouts();
   }
   else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
-    Serial.println("ONLY BLUETOOTH");
-    ledBlue.on();
-    state = ONLY_BT;
-    bleTimer = millis();
+    values.dataWanted_all = 1;
+    state = LIGHT_SLEEP;
+    return;
   }
   else {
     // Ignore if button is pressed less than a second
@@ -355,10 +363,6 @@ void checkButtonState(void) {
     } else if (ms > btButtonPressed + 300) {
       if (digitalRead(BLUETOOTH_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkBT = 0;
-        if (values.warning) {
-          vib.off();
-          dismissWarning();
-        }
       }
     }
   }
@@ -390,17 +394,11 @@ void checkButtonState(void) {
     if (ms > waButtonPressed + 1200) {
       checkWA = 0;
       if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
-        if (state == SENSORS_ACTIVE) {
-          state = LIGHT_SLEEP;  
+        if (values.warning) {
+          vib.off();
+          dismissWarning();
         }
-        else {
-          // Wake up sensors.
-          state = SENSORS_ACTIVE;
-          ledGreen.on();
-          sensorsInit();
-          setTimeouts();
-        }
-      }     
+      }    
     } else if (ms > waButtonPressed + 300) {
       if (digitalRead(WARNING_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkWA = 0;
@@ -448,19 +446,6 @@ void checkBLE() {
     }
     values.clearAllMemory();
   }    
-  if (values.dataWanted_all) {
-    // Send over UART
-    ledBlue.on();
-    values.dataWanted_all = 0;
-    if (state == ONLY_BT) {
-      Serial.println("Good Night");
-      state = LIGHT_SLEEP;
-    }
-    Serial.println("all data wanted");
-    Serial.println(values.prepareAllData().c_str());
-    delay(1000);        // TODO something like "while not done" needed?
-    ledBlue.off();
-  }
   if (values.dataWanted_CO2) {
     Serial.println("CO2 Data wanted");
     Serial.println(values.prepareCO2Data().c_str());
@@ -527,7 +512,6 @@ void sensorsInit() {
       return;
     }
   }
-  
   if (firstBoot) {
     while (!ccs.available());
     float t = ccs.calculateTemperature();
@@ -538,7 +522,9 @@ void sensorsInit() {
 
 void handleWarning() {
   ms = millis();
-  if (values.warning) {
+  if (!values.warning) {
+    ledRed.off();
+  } else {
     ledRed.on();
     if (!ignoreWarning && (warningVibTimeout < ms)) {
       warningCounter++;
@@ -548,47 +534,30 @@ void handleWarning() {
     if (warningCounter >= 4) {
       dismissWarning();
     }    
-  } else {
-    ledRed.off();
-  }      
-  if (reactivateWarning && ms > warningTimeout) {
-    Serial.println("Warnings reactivated");
-    Serial.println();
-    values.warnCO2 = 1;
-    values.warnVOC = 1;
-    reactivateWarning = 0;
-  }  
-  
-
+  }    
 }
 
 void dismissWarning() {
-  String s;
   if (values.getUVIFlag()) {
     values.warnUVI = 0;
     values.clearUVIFlag();
-    s = "UVI";
   }
   else if (values.getTempFlag()) {
     values.warnTemp = 0;
     values.clearTempFlag();
-    s = "Temp";
   }
   else if (values.getVOCFlag()) {
     values.warnVOC = 0;
     values.clearVOCFlag();
-    s = "VOC";
   }
   else if (values.getCO2Flag()) {
     values.warnCO2 = 0;
     values.clearCO2Flag();
-    s = "CO2";
   }
   Serial.print("Warning dismissed: ");
-  Serial.println(s);
+
   warningCounter = 0;
   warningTimeout = millis() + warningMs; // Reactivate after 30 min
-  reactivateWarning = 1;
   ledRed.off();
   vib.off();
 }
