@@ -374,6 +374,9 @@ void Values::setUVIDurationThresh(uint8_t val) {
 
 void Values::storeCO2(uint16_t val) {
 	co2[co2_idx++] = val;
+	if (co2_idx == CO2_ARRAY_SIZE) {
+		storeRAMToFlash();
+	}
 	if (warnCO2 && val >= co2Thresh) {
 		setCO2Flag();
 	}
@@ -384,6 +387,9 @@ void Values::storeCO2(uint16_t val) {
 
 void Values::storeVOC(uint16_t val) {
 	voc[voc_idx++] = val;
+	if (voc_idx == VOC_ARRAY_SIZE) {
+		storeRAMToFlash();
+	}
 	if (warnVOC && val >= vocThresh) {
 		setVOCFlag();
 	}
@@ -394,6 +400,9 @@ void Values::storeVOC(uint16_t val) {
 
 void Values::storeTemp(float val) {
 	temp[temp_idx++] = val;
+	if (temp_idx == TEMP_ARRAY_SIZE) {
+		storeRAMToFlash();
+	}
 	if (warnTemp && val >= tempThresh) {
 		setTempFlag();
 	}
@@ -419,6 +428,9 @@ void Values::resetSteps(void) {
 
 void Values::storeUVI(uint8_t val) {
 	uvi[uvi_idx++] = val;
+	if (uvi_idx == UVI_ARRAY_SIZE) {
+		storeRAMToFlash();
+	}
 	if (val >= uviThresh) {
 		uviDuration++;
 	}

@@ -120,7 +120,8 @@ void loop() {
     ledBlue.on();
     values.dataWanted_all = 0;
 
-    Serial.println("all data wanted");
+    ble.write("Print data over Serial Port... \n"); // TODO too long? how much are 20 bytes?
+    Serial.println("all data wanted. Print data over serial port!");
     Serial.println(values.prepareAllData().c_str());
     delay(1000);        // TODO something like "while not done" needed?
     ledBlue.off();
@@ -139,7 +140,6 @@ void loop() {
     handleWarning();
     if (values.pedoEnable && ms > pedoTimeout) {
       uint16_t x = pedo.getPedo();
-      
       // Step registered
       if (pedo.flag) {
         Serial.println(x);
@@ -161,6 +161,7 @@ void loop() {
         vibCounter++;
       }
       if (vibCounter > 2) {
+        ble.write("Step goal achieved\n"); // TODO too many bytes for ble.write?
         goalVib = 0;
         vibCounter= 0;
         vib.off();
@@ -344,7 +345,7 @@ void wakeUp() {
   attachInterrupt(digitalPinToInterrupt(POWER_PIN), pwButtonISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN), btButtonISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(WARNING_PIN), waButtonISR, FALLING);
-  Serial.println("Good morning!");
+  ble.write("Good morning!\n");
 }
 
 
