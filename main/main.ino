@@ -48,7 +48,7 @@ bool ignoreWarning = 0;
 volatile bool checkBT = 0;
 volatile bool checkPW = 0;
 volatile bool checkWA = 0;
-volatile uint32_t powerDebounceTimer = 0;
+volatile uint32_t pwDebounceTimer = 0;
 volatile uint32_t btDebounceTimer = 0;
 volatile uint32_t waDebounceTimer = 0;
 volatile uint32_t btButtonPressed = 0;
@@ -297,6 +297,31 @@ void setTimeouts() {
   showTimeout = ms + values.showFreq;
 }
 
+void showMemoryStatus(void) {
+  uint16_t runningSec= ms/1000;
+  ble.write("---Memory Status--- \n\n");
+  ble.write("***Running Time: ");
+  ble.write(values.getUint16AsString(runningSec))
+  ble.write("\n\n");
+  ble.write("***Flash Memory: \n");
+  ble.write("Air Quality Data: ");
+  uint16_t currIdx = values.getCurrentCO2FlashIdx() - 1;
+  ble.write(values.getUint16AsString(currIdx));
+  ble.write("/18000\n");
+  ble.write("UVI Data: ");
+  uint16_t currIdx = values.getCurrentUVIFlashIdx() - 1;
+  ble.write(values.getUint16AsString(currIdx));
+  ble.write("/18000\n");
+  ble.write("\n\n");
+  ble.write("\n***Dynamic Memory: \n");
+  ble.write("Air Quality Data: ");
+  ble.write(values.getUint8AsString((values.co2_idx - 1)));
+  ble.write("/200\n");
+  ble.write("UVI Data: ");
+  ble.write(values.getUint8AsString((values.uvi_idx - 1)));
+  ble.write("/200\n");
+}
+
 void showThresholds(void) {
   msg = "";
   msg = "UVI thresh: ";
@@ -438,6 +463,7 @@ void checkButtonState(void) {
     } else if (ms > waButtonPressed + 500) {
       if (digitalRead(WARNING_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkWA = 0;
+        showMemoryStatus();
       }
     }
   }  
@@ -445,8 +471,8 @@ void checkButtonState(void) {
 
 void pwButtonISR() {
   ms = millis();
-  if (powerDebounceTimer < ms) {
-    powerDebounceTimer = ms + 100;
+  if (pwDebounceTimer < ms) {
+    pwDebounceTimer = ms + 100;
     pwButtonPressed = ms;
     checkPW = 1;
   }
