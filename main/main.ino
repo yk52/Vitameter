@@ -62,7 +62,7 @@ volatile uint32_t waButtonPressed = 0;
 uint32_t warningMs = 900000;  // 15 min
 uint32_t ms = 0;
 uint32_t warningTimeout = 0;
-uint8_t warningCounter = 0;
+uint8_t warningVibCounter = 0;
 uint32_t warningVibTimeout = 0;
 bool goalVib = 0;
 uint8_t vibCounter = 0;
@@ -138,75 +138,13 @@ void loop() {
   //__________________________________________________________________
   else if (state == SENSORS_ACTIVE) {
     handleWarning();
-    if (values.pedoEnable && ms > pedoTimeout) {
-      uint16_t x = pedo.getPedo();
-      // Step registered
-      if (pedo.flag) {
-        Serial.println(x);
-        bool goalAchieved = values.storeSteps(x);
-        if (goalAchieved) {
-          // vibrate in short intervals
-          goalVib = 1;
-          vibTimeout = ms;
-        }
-        pedoTimeout = ms + WAIT_AFTER_STEP;
-        pedo.flag = 0;
-      }
-      else {
-        pedoTimeout += PEDO_FREQ;
-      }
-      if (goalVib && ms > vibTimeout) {
-        vib.toggle();
-        vibTimeout = ms + 200;
-        vibCounter++;
-      }
-      if (vibCounter > 2) {
-        ble.write("Step goal achieved\n"); // TODO too many bytes for ble.write?
-        goalVib = 0;
-        vibCounter= 0;
-        vib.off();
-      }
-    }
-    if (ms > uvTimeout) {
-      uvTimeout += values.uvFreq;
-      uint8_t u = uv.readUVI();
-      values.storeUVI(u);
-    }
-    if (ms > airTimeout) {
-      ccs.readData();
-      airTimeout += values.aqFreq;
-      uint16_t c = ccs.geteCO2();
-      uint16_t v = ccs.getTVOC();
-      values.storeCO2(c);
-      values.storeVOC(v);
-      values.storeTemp(ccs.calculateTemperature());
-    }
-
-#ifdef SHOW_SERIAL
+    takeMeasurements();
     if (ms > showTimeout) {
-      String msg;
-      msg = "Measurement number: ";
-      Serial.print("Measurement number: ");
-      Serial.println(values.co2_idx);
-  
-      Serial.print("CO2: ");
-      Serial.println(values.getLastCO2());
-      Serial.print("TVOC: ");
-      Serial.println(values.getLastVOC());
-      Serial.print("UV: ");
-      Serial.println(values.getLastUVI());
-      Serial.println();
-      Serial.println();
+      showMeasurements();
       showTimeout += showFreq;
     }
-#endif
 
-    // Store RAM into flash if array is full.
-    if (values.uvi_idx == UVI_STORAGE_SIZE) {
-      values.storeRAMToFlash();
-    }
-    
-    //_____ Go sleep until next timeout ________________________________ TODO wake up every 30 s?
+ /*   //_____ Go sleep until next timeout ________________________________ TODO wake up every 30 s? Leave this as it is for starters. keep pedo enabled to avoid this state
 
     if (!(checkBT || checkPW || checkWA) && !values.pedoEnable && !values.warning) {
       ms = millis();
@@ -233,13 +171,80 @@ void loop() {
           }
         }
       }
-    }
+    }*/
   }
  //___Bluetooth low energy  communication on (is always on) ____________________________________
  
  if (ms > bleShow) {
     bleShow = ms + 3000;
     
+
+  }
+}  
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void takeMeasurements(void) {
+  if (values.pedoEnable && ms > pedoTimeout) {
+    uint16_t x = pedo.getPedo();
+    // Step registered
+    if (pedo.flag) {
+      // Serial.println(x);
+      bool goalAchieved = values.storeSteps(x);
+      if (goalAchieved) {
+        // vibrate in short intervals
+        goalVib = 1;
+        vibTimeout = ms;
+      }
+      pedoTimeout = ms + WAIT_AFTER_STEP;
+      pedo.flag = 0;
+    }
+    else {
+      pedoTimeout += PEDO_FREQ;
+    }
+    if (goalVib && ms > vibTimeout) {
+      vib.toggle();
+      vibTimeout = ms + 200;
+      vibCounter++;
+    }
+    if (vibCounter > 2) {
+      ble.write("Step goal achieved\n"); // TODO too many bytes for ble.write?
+      goalVib = 0;
+      vibCounter= 0;
+      vib.off();
+    }
+  }
+  if (ms > uvTimeout) {
+    uvTimeout += values.uvFreq;
+    uint8_t u = uv.readUVI();
+    values.storeUVI(u);
+  }
+  if (ms > airTimeout) {
+    ccs.readData();
+    airTimeout += values.aqFreq;
+    uint16_t c = ccs.geteCO2();
+    uint16_t v = ccs.getTVOC();
+    values.storeCO2(c);
+    values.storeVOC(v);
+    values.storeTemp(ccs.calculateTemperature());
+  }
+}
+
+void showMeasurements(void) {
+#ifdef SHOW_SERIAL
+    Serial.print("Measurement number: ");
+    Serial.println(values.co2_idx);
+    Serial.print("CO2: ");
+    Serial.println(values.getLastCO2());
+    Serial.print("TVOC: ");
+    Serial.println(values.getLastVOC());
+    Serial.print("UV: ");
+    Serial.println(values.getLastUVI());
+    Serial.println();
+    Serial.println();
+#endif
+
 #ifdef SHOW_BLE
     msg = "";
     msg = "Measurement number: ";
@@ -259,20 +264,16 @@ void loop() {
     msg += "\n";
     ble.write(msg);
     msg = "Steps: ";
-    msg += values.getUint16AsString(values.getLastStep());
+ //    msg += values.getUint16AsString(values.getLastStep());
     msg += "\n";
     msg += "\n";
     ble.write(msg);
     if (values.warning) {
-      ble.write("Following thresholds exceeded: ");
+      ble.write("Thresholds exceeded: \n");
       
     }
-#endif
-  }
-}  
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////
+#endif    
+}
 
 void goLightSleepTimeout(uint64_t sleepMillis) {
   esp_sleep_enable_timer_wakeup(sleepMillis * 1000);
@@ -395,9 +396,14 @@ void checkButtonState(void) {
     if (ms > waButtonPressed + 1200) {
       checkWA = 0;
       if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
-        if (values.warning) {
+        if (!ignoreWarning && values.warning) {
           vib.off();
+          ignoreWarning = 1;
           dismissWarning();
+          ble.write("Warnings deactivated\n");
+        } else if (ignoreWarning) {
+          ignoreWarning = 0;
+          ble.write("Warnings activated\n");
         }
       }    
     } else if (ms > waButtonPressed + 300) {
@@ -528,37 +534,19 @@ void handleWarning() {
   } else {
     ledRed.on();
     if (!ignoreWarning && (warningVibTimeout < ms)) {
-      warningCounter++;
+      warningVibCounter++;
       warningVibTimeout = ms + 500;
       vib.toggle();
     }
-    if (warningCounter >= 4) {
+    if (warningVibCounter >= 4) {
       dismissWarning();
     }    
   }    
 }
 
 void dismissWarning() {
-  if (values.getUVIFlag()) {
-    values.warnUVI = 0;
-    values.clearUVIFlag();
-  }
-  else if (values.getTempFlag()) {
-    values.warnTemp = 0;
-    values.clearTempFlag();
-  }
-  else if (values.getVOCFlag()) {
-    values.warnVOC = 0;
-    values.clearVOCFlag();
-  }
-  else if (values.getCO2Flag()) {
-    values.warnCO2 = 0;
-    values.clearCO2Flag();
-  }
-  Serial.print("Warning dismissed: ");
-
-  warningCounter = 0;
-  warningTimeout = millis() + warningMs; // Reactivate after 30 min
+  warningVibCounter = 0;
+  warningTimeout = millis() + warningMs;
   ledRed.off();
   vib.off();
 }
