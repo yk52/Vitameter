@@ -298,10 +298,19 @@ void setTimeouts() {
 }
 
 void showMemoryStatus(void) {
-  uint16_t runningSec= ms/1000;
+  msg = "";
+  uint8_t runningSec = (ms / 1000) % 60;
+  uint8_t runningMin = (runningSec / 60) % 60
+  uint16_t runnintHrs = ms / 3600000;
+  msg = values.getUint16AsString(runningHrs);
+  msg += "h ";
+  msg = values.getUint8AsString(runningMin);
+  msg += "min ";
+  values.getUint8AsString(runningHrs);
+  msg += "s\n";
   ble.write("---Memory Status--- \n\n");
   ble.write("***Running Time: ");
-  ble.write(values.getUint16AsString(runningSec))
+  ble.write(msg);
   ble.write("\n\n");
   ble.write("***Flash Memory: \n");
   ble.write("Air Quality Data: ");
@@ -367,6 +376,7 @@ void wakeUp() {
     showThresholds();
     ledGreen.on();
     sensorsInit();
+    ms = 0;
     setTimeouts();
   }
   else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
@@ -545,6 +555,7 @@ void checkBLE() {
 }
 
 void sensorsInit() {
+  msg = "";
   bool error = 0;
   sensors.on();
   delay(500); 
@@ -552,6 +563,7 @@ void sensorsInit() {
   // UV
   if (!uv.begin()) {
     Serial.println("Failed to communicate with VEML6075 UV sensor! Please check your wiring.");
+    msg = "UV ";
     error = 1;
   }
   else {
@@ -560,6 +572,7 @@ void sensorsInit() {
   // Air Quality init
   if (!ccs.begin()) {
     Serial.println("Failed to start Air Quality sensor! Please check your wiring.");
+    msg += "and AQ ";
     error = 1;
   }
   else {
@@ -570,6 +583,9 @@ void sensorsInit() {
     delay(1000);
     ledRed.off();
     delay(1000);
+    ble.write("Error: ")
+    ble.write(msg);
+    ble.write(" failed. Plug Battery in and out\n\n");
     if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
       state = LIGHT_SLEEP;
       return;
