@@ -345,7 +345,23 @@ void wakeUp() {
     setTimeouts();
   }
   else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
-    values.dataWanted_all = 1;
+    // To clear memory: fist press BT. Then press WA for at least 3 sec.
+    if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+      ledBlue.on();
+      ledRed.on();
+      delay(2000);
+      if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+        values.clearMemory = 1;
+        ledRed.off();
+        ledBlue.off();
+        checkBLE();
+      } else {
+        ledRed.off();
+        ledBlue.off();
+      }
+    } else {
+      values.dataWanted_all = 1;
+    }
     state = LIGHT_SLEEP;
     return;
   }
@@ -457,6 +473,7 @@ void waButtonISR() {
 
 void checkBLE() {
   if (values.clearMemory) {
+    ble.write("Erase Memory!\n");
     values.clearMemory = 0;
     for (int i=0; i<4; i++) {
       ledBlue.on();
