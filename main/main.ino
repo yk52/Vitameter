@@ -86,7 +86,7 @@ void setup() {
   // Buttons init
   pinMode(POWER_PIN, INPUT);
   pinMode(BLUETOOTH_PIN, INPUT);
-  // pinMode(WARNING_PIN, INPUT); // TODO add later
+  pinMode(WARNING_PIN, INPUT);
 
   // ADC init
   pinMode(X_PIN, INPUT);
@@ -149,7 +149,7 @@ void loop() {
         if (timeLeft > 2000) {
           delay(500);
           gpio_wakeup_enable(GPIO_NUM_36, GPIO_INTR_LOW_LEVEL);
-          gpio_wakeup_enable(GPIO_NUM_34, GPIO_INTR_LOW_LEVEL);
+          gpio_wakeup_enable(GPIO_NUM_39, GPIO_INTR_LOW_LEVEL);
           // gpio_wakeup_enable(GPIO_NUM_23, GPIO_INTR_LOW_LEVEL); // TODO add back in on new one
           esp_sleep_enable_gpio_wakeup();
           goLightSleepTimeout(timeLeft - 500);
@@ -282,7 +282,7 @@ void goLightSleep() {
   ledRed.off();
   ledBlue.off();
   gpio_wakeup_enable(GPIO_NUM_36, GPIO_INTR_LOW_LEVEL);
-  gpio_wakeup_enable(GPIO_NUM_34, GPIO_INTR_LOW_LEVEL);
+  gpio_wakeup_enable(GPIO_NUM_39, GPIO_INTR_LOW_LEVEL);
   gpio_wakeup_enable(GPIO_NUM_23, GPIO_INTR_LOW_LEVEL);
   esp_sleep_enable_gpio_wakeup();
   esp_light_sleep_start();
@@ -300,8 +300,8 @@ void setTimeouts() {
 void showMemoryStatus(void) {
   msg = "";
   uint8_t runningSec = (ms / 1000) % 60;
-  uint8_t runningMin = (runningSec / 60) % 60
-  uint16_t runnintHrs = ms / 3600000;
+  uint8_t runningMin = (runningSec / 60) % 60;
+  uint16_t runningHrs = ms / 3600000;
   msg = values.getUint16AsString(runningHrs);
   msg += "h ";
   msg = values.getUint8AsString(runningMin);
@@ -318,7 +318,7 @@ void showMemoryStatus(void) {
   ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("UVI Data: ");
-  uint16_t currIdx = values.getCurrentUVIFlashIdx() - 1;
+  currIdx = values.getCurrentUVIFlashIdx() - 1;
   ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("\n\n");
@@ -583,7 +583,7 @@ void sensorsInit() {
     delay(1000);
     ledRed.off();
     delay(1000);
-    ble.write("Error: ")
+    ble.write("Error: ");
     ble.write(msg);
     ble.write(" failed. Plug Battery in and out\n\n");
     if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {

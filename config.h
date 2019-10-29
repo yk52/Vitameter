@@ -73,18 +73,18 @@
 #define SKIN_TYPE_5				60	// actually >60
 
 
-//Pins as in WCS_Version10 // Version Basel
-#define	VIBRATION_PIN			35 // 27
+// Version Basel //Pins as in WCS_Version10
+#define	VIBRATION_PIN			27 // 35
 
 // LED pins
-#define LEDBLUE_PIN				23 //16 // Bluetooth
-#define	LEDGREEN_PIN			16 // 2 // Power
+#define LEDBLUE_PIN				16 //23 // Bluetooth
+#define	LEDGREEN_PIN			2 // 16 // Power
 #define LEDRED_PIN				15 // 15// Warning
 
 // Button pins
 #define POWER_PIN				36
-#define BLUETOOTH_PIN			34// 39
-#define WARNING_PIN				23	// TODO add back in
+#define BLUETOOTH_PIN			39// 34
+#define WARNING_PIN				23
 #define PRESSED_BUTTON_LEVEL	0
 
 #define SENSORS_EN_PIN			13
