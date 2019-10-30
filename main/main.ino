@@ -44,6 +44,7 @@ InterfaceOut sensors(SENSORS_EN_PIN);
 bool firstBoot = 1;
 bool ignoreWarning = 0;
 
+
 // Button related
 volatile bool checkBT = 0;
 volatile bool checkPW = 0;
@@ -322,12 +323,12 @@ void showMemoryStatus(void) {
   ble.write("\n\n");
   ble.write("***Flash Memory: \n");
   ble.write("Air Quality Data: ");
-  uint16_t currIdx = values.getCurrentCO2FlashIdx();
-  ble.write(values.getUint16AsString(currIdx) - CO2_FLASH_IDX_START);
+  uint16_t currIdx = values.getCurrentCO2FlashIdx() - CO2_FLASH_IDX_START;
+  ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("UVI Data: ");
-  currIdx = values.getCurrentUVIFlashIdx();
-  ble.write(values.getUint16AsString(currIdx) - UVI_FLASH_IDX_START);
+  currIdx = values.getCurrentUVIFlashIdx()  - UVI_FLASH_IDX_START;
+  ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("\n\n");
   ble.write("\n***Dynamic Memory: \n");
