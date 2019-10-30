@@ -105,20 +105,11 @@ void setup() {
 
 void loop() {
   ms = millis();
-
   if (checkBT || checkPW || checkWA) {
     checkButtonState();
   }
   if (values.dataWanted_all) {
-    // Send over UART
-    ledBlue.on();
-    values.dataWanted_all = 0;
-
-    ble.write("Print data over Serial Port...\n"); // TODO too long? how much are 20 bytes?
-    Serial.println("all data wanted. Print data over serial port!");
-    Serial.println(values.prepareAllData().c_str());
-    delay(1000);        // TODO something like "while not done" needed?
-    ledBlue.off();
+    sendDataOverUart();
   }
   checkBLE();
 
@@ -171,6 +162,17 @@ void loop() {
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void sendDataOverUart(void) {
+  ledBlue.on();
+  values.dataWanted_all = 0;
+
+  ble.write("Print data over Serial Port...\n");
+  Serial.println("all data wanted. Print data over serial port!");
+  Serial.println(values.prepareAllData().c_str());
+  delay(500);        // TODO something like "while not done" needed?
+  ledBlue.off();  
+}
 
 void takeMeasurements(void) {
   if (values.pedoEnable && ms > pedoTimeout) {
@@ -304,14 +306,15 @@ void setTimeouts() {
 
 void showMemoryStatus(void) {
   msg = "";
-  uint8_t runningSec = (ms / 1000) % 60;
-  uint8_t runningMin = (runningSec / 60) % 60;
+  uint32_t sec = ms / 1000;
+  uint8_t runningSec = sec % 60;
+  uint8_t runningMin = (sec / 60) % 60;
   uint16_t runningHrs = ms / 3600000;
   msg = values.getUint16AsString(runningHrs);
   msg += "h ";
-  msg = values.getUint8AsString(runningMin);
+  msg += values.getUint8AsString(runningMin);
   msg += "min ";
-  values.getUint8AsString(runningHrs);
+  msg += values.getUint8AsString(runningSec);
   msg += "s\n";
   ble.write("---Memory Status--- \n\n");
   ble.write("***Running Time: ");
@@ -319,21 +322,21 @@ void showMemoryStatus(void) {
   ble.write("\n\n");
   ble.write("***Flash Memory: \n");
   ble.write("Air Quality Data: ");
-  uint16_t currIdx = values.getCurrentCO2FlashIdx() - 1;
-  ble.write(values.getUint16AsString(currIdx));
+  uint16_t currIdx = values.getCurrentCO2FlashIdx();
+  ble.write(values.getUint16AsString(currIdx) - CO2_FLASH_IDX_START);
   ble.write("/18000\n");
   ble.write("UVI Data: ");
-  currIdx = values.getCurrentUVIFlashIdx() - 1;
-  ble.write(values.getUint16AsString(currIdx));
+  currIdx = values.getCurrentUVIFlashIdx();
+  ble.write(values.getUint16AsString(currIdx) - UVI_FLASH_IDX_START);
   ble.write("/18000\n");
   ble.write("\n\n");
   ble.write("\n***Dynamic Memory: \n");
   ble.write("Air Quality Data: ");
-  ble.write(values.getUint8AsString((values.co2_idx - 1)));
+  ble.write(values.getUint16AsString((values.co2_idx)));
   ble.write("/200\n");
   ble.write("UVI Data: ");
-  ble.write(values.getUint8AsString((values.uvi_idx - 1)));
-  ble.write("/200\n");
+  ble.write(values.getUint16AsString((values.uvi_idx)));
+  ble.write("/200\n\n\n");
 }
 
 void showThresholds(void) {
@@ -373,7 +376,6 @@ void showThresholds(void) {
 void wakeUp() {
   // If button still pressed after 1 second
   delay(800);
-  
   if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
     ble.write("\n WAKING UP");
     Serial.println("WAKING UP!");
@@ -383,31 +385,36 @@ void wakeUp() {
     sensorsInit();
     ms = 0;
     setTimeouts();
-  } else if (digitalRead(WARNING_PIN == PRESSED_BUTTON_LEVEL)) {
-      showMemoryStatus();
-      delay(1000);
   } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
     // To clear memory: fist press BT. Then press WA for at least 3 sec.
     if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
       ledBlue.on();
       ledRed.on();
-      delay(2000);
+      ledGreen.on();
+      delay(3000);
       if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
         values.clearMemory = 1;
         ledRed.off();
         ledBlue.off();
+        ledGreen.off();
         checkBLE();
       } else {
         ledRed.off();
         ledBlue.off();
+        ledGreen.off();
+        delay(1000);
       }
     } else {
-      values.dataWanted_all = 1;
+      sendDataOverUart();
     }
+  } else if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+    ledRed.on();
+    delay(300);
+    ledRed.off();
+    showMemoryStatus();
     state = LIGHT_SLEEP;
     return;
-  }
-  else {
+  } else {
     // Ignore if button is pressed less than a second
     state = LIGHT_SLEEP;
     return;
@@ -479,8 +486,11 @@ void checkButtonState(void) {
       }    
     } else if (ms > waButtonPressed + 500) {
       if (digitalRead(WARNING_PIN) == !PRESSED_BUTTON_LEVEL) {
+        ledRed.on();
         checkWA = 0;
         showMemoryStatus();
+        delay(300);
+        ledRed.off();
       }
     }
   }  
@@ -516,15 +526,21 @@ void waButtonISR() {
 
 void checkBLE() {
   if (values.clearMemory) {
+    Serial.println("Erase Memory!");
     ble.write("Erase Memory!\n");
     values.clearMemory = 0;
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<6; i++) {
       ledBlue.on();
       delay(500);
       ledBlue.off();
       delay(500);
     }
     values.clearAllMemory();
+    if (values.getCurrentCO2FlashIdx() == CO2_FLASH_IDX_START) {
+      Serial.println("Successfully cleared Memory!");
+    } else {
+      Serial.println("Failed.");
+    }
   }    
   if (values.dataWanted_CO2) {
     Serial.println("CO2 Data wanted");

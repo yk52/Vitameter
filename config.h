@@ -24,7 +24,7 @@
 #define STEPS_FLASH_ADDR_LO			8
 #define STEPS_FLASH_ADDR_HI			9
 
-// Index is relative to IDX_START
+// Index is absolute to IDX_START
 #define CO2_FLASH_IDX_ADDR_LO		10
 #define CO2_FLASH_IDX_ADDR_HI		11
 #define VOC_FLASH_IDX_ADDR_LO		12
@@ -95,9 +95,9 @@
 
 // Frequencies
 #define PEDO_FREQ				30
-#define AQ_FREQ					3	// 3s for demo. actually 10 min
-#define UV_FREQ					3	// 3s for demo. actually 1 min
-#define SHOW_FREQ				3	// 3s for now.
+#define AQ_FREQ					6 	// 6s for demo. actually 10 min
+#define UV_FREQ					6	// 6s for demo. actually 1 min
+#define SHOW_FREQ				6	// 6s for now.
 
 
 // Pedometer
