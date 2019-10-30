@@ -95,8 +95,6 @@ void setup() {
   
   // Thresholds for sensor values init
   values.init();
-  sensors.on();
-  delay(500);
   pedo.calibrate();
   values.pedoEnable = 1;
   ble.init("Vitameter low energy");
@@ -209,6 +207,7 @@ void takeMeasurements(void) {
     uint8_t u = uv.readUVI();
     values.storeUVI(u);
   }
+  /*
   if (ms > airTimeout) {
     ccs.readData();
     airTimeout += values.aqFreq;
@@ -218,6 +217,7 @@ void takeMeasurements(void) {
     values.storeVOC(v);
     values.storeTemp(ccs.calculateTemperature());
   }
+  */
 }
 
 void showMeasurements(void) {
@@ -253,7 +253,7 @@ void showMeasurements(void) {
     msg += "\n";
     ble.write(msg);
     msg = "Steps: ";
- //    msg += values.getUint16AsString(values.getLastStep());
+    msg += values.getUint16AsString(values.getLastStep());
     msg += "\n";
     msg += "\n";
     ble.write(msg);
@@ -281,6 +281,7 @@ void goLightSleep() {
   ledGreen.off();
   ledRed.off();
   ledBlue.off();
+  sensors.off();
   gpio_wakeup_enable(GPIO_NUM_36, GPIO_INTR_LOW_LEVEL);
   gpio_wakeup_enable(GPIO_NUM_39, GPIO_INTR_LOW_LEVEL);
   gpio_wakeup_enable(GPIO_NUM_23, GPIO_INTR_LOW_LEVEL);
@@ -292,9 +293,13 @@ void goLightSleep() {
 void setTimeouts() {
   ms = millis();
   pedoTimeout = PEDO_FREQ + ms;
-  uvTimeout = UV_FREQ + ms;
-  airTimeout = AQ_FREQ + ms;
+  uvTimeout = values.uvFreq + ms;
+  airTimeout = values.aqFreq + ms;
   showTimeout = ms + values.showFreq;
+  // TODO
+  Serial.println(values.showFreq);
+  Serial.println(values.aqFreq);
+  Serial.println(values.uvFreq);
 }
 
 void showMemoryStatus(void) {
@@ -378,8 +383,10 @@ void wakeUp() {
     sensorsInit();
     ms = 0;
     setTimeouts();
-  }
-  else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
+  } else if (digitalRead(WARNING_PIN == PRESSED_BUTTON_LEVEL)) {
+      showMemoryStatus();
+      delay(1000);
+  } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
     // To clear memory: fist press BT. Then press WA for at least 3 sec.
     if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
       ledBlue.on();
@@ -534,7 +541,6 @@ void checkBLE() {
   } else {
     sent = ble.getMessage();
     processed = values.processMessage(sent);
-    ble.write(processed);
 
     if (sent != oldSent) {
       /*
@@ -550,6 +556,7 @@ void checkBLE() {
       Serial.println("");
       */
       oldSent = sent;
+      ble.write(processed);
     }
   }  
 }
@@ -558,9 +565,10 @@ void sensorsInit() {
   msg = "";
   bool error = 0;
   sensors.on();
-  delay(500); 
+  delay(100); 
   pedo.calibrate();
   // UV
+  
   if (!uv.begin()) {
     Serial.println("Failed to communicate with VEML6075 UV sensor! Please check your wiring.");
     msg = "UV ";
@@ -569,15 +577,18 @@ void sensorsInit() {
   else {
     Serial.println("Found VEML6075 (UV) sensor");
   }
+
+/*
   // Air Quality init
   if (!ccs.begin()) {
     Serial.println("Failed to start Air Quality sensor! Please check your wiring.");
-    msg += "and AQ ";
+    msg += " AQ ";
     error = 1;
   }
   else {
     Serial.println("Found CCS811 (Air Quality) sensor");
   }
+  */
   while (error) {
     ledRed.on();
     delay(1000);

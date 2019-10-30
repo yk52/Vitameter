@@ -33,9 +33,9 @@ bool warnCO2 = 1;
 uint8_t uviDuration = 0;
 bool pedoEnable = 0;
 
-uint32_t aqFreq = AQ_FREQ;
-uint32_t uvFreq = UV_FREQ;
-uint32_t bleFreq = SHOW_FREQ;
+uint32_t aqFreq = 0;
+uint32_t uvFreq = 0;
+uint32_t showFreq = 0;
 
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
@@ -65,6 +65,11 @@ void Values::clearAllMemory(void) {
 
 void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
+	// TODO
+	setUVFreq(UV_FREQ);
+	setAQFreq(AQ_FREQ);
+	setShowFreq(SHOW_FREQ);
+	//
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
 	if (thresholdsSet != 1) {
 		// Values initiated flag
@@ -83,6 +88,9 @@ void Values::init(void) {
 		EEPROM.write(STEP_GOAL_ADDR_HI, 0x27); // 0x2710 = 10000
 		EEPROM.write(STEP_GOAL_ADDR_LO, 0x10);
 		stepGoal = 10000;
+		setUVFreq(UV_FREQ);
+		setAQFreq(AQ_FREQ);
+		setShowFreq(SHOW_FREQ);
 
 		// Set Flash storage indices
 		setFlashIndexToStart();
@@ -95,14 +103,15 @@ void Values::init(void) {
 		uviThresh = getUVIThresh();
 		uviDurationThresh = getUVIDurationThresh();
 		stepGoal = getStepGoal();
-		uvFreq = getUVFreq() * 1000;
-		aqFreq = getAQFreq() * 1000;
+		uvFreq = getUVFreq();
+		aqFreq = getAQFreq();
+		showFreq = getShowFreq();
 	}
 }
 
 void Values::setShowFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
-	bleFreq = val*1000;
+	showFreq = val*1000;
 }
 
 void Values::setAQFreq(uint16_t val) {
@@ -122,6 +131,11 @@ void Values::setUVFreq(uint16_t val) {
 	EEPROM.write(UV_FREQ_ADDR_LO, LO);
 	EEPROM.write(UV_FREQ_ADDR_HI, HI);
 }
+
+uint16_t Values::getShowFreq(void) {
+	return showFreq;
+}
+
 
 uint16_t Values::getAQFreq(void) {
 	uint8_t LO = EEPROM.read(AQ_FREQ_ADDR_LO);

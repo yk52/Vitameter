@@ -95,9 +95,9 @@
 
 // Frequencies
 #define PEDO_FREQ				30
-#define AQ_FREQ					3000	// 3s for demo. actually 10 min
-#define UV_FREQ					3000	// 3s for demo. actually 1 min
-#define SHOW_FREQ				3000	// 3s for now.
+#define AQ_FREQ					3	// 3s for demo. actually 10 min
+#define UV_FREQ					3	// 3s for demo. actually 1 min
+#define SHOW_FREQ				3	// 3s for now.
 
 
 // Pedometer
