@@ -322,12 +322,15 @@ void showMemoryStatus(void) {
   ble.write(msg);
   ble.write("\n");
   ble.write("***Measurement Frequencies: \n");
-  ble.write("Air Quality: Every ");
-  ble.write(values.getUint16AsString(values.aqFreq));
-  ble.write("\n");
-  ble.write("UV: Every ");
-  ble.write(values.getUint16AsString(values.uvFreq));
-  ble.write("\n");  
+  msg = "Air Quality: Every ");
+  msg += values.getUint16AsString(values.aqFreq);
+  msg += " ms\n";
+  ble.write(msg);
+  msg = "UV Index: Every ");
+  msg += values.getUint16AsString(values.uvFreq);
+  msg += " ms\n";
+  ble.write(msg);  
+  ble.write("\n\n");  
   ble.write("***Flash Memory: \n");
   ble.write("Air Quality Data: ");
   uint16_t currIdx = values.getCurrentCO2FlashIdx() - CO2_FLASH_IDX_START;
@@ -345,6 +348,7 @@ void showMemoryStatus(void) {
   ble.write("UVI Data: ");
   ble.write(values.getUint16AsString((values.uvi_idx)));
   ble.write("/200\n\n\n");
+  showThresholds();
 }
 
 void showThresholds(void) {
