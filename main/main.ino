@@ -99,6 +99,19 @@ void setup() {
   pedo.calibrate();
   values.pedoEnable = 1;
   ble.init("Vitameter low energy");
+
+  ledRed.on();
+  ledBlue.on();
+  ledGreen.on();
+  while(digitalRead(POWER_PIN) != PRESSED_BUTTON_LEVEL) {}
+  ledRed.off();
+  while(digitalRead(BLUETOOTH_PIN) != PRESSED_BUTTON_LEVEL) {}
+  ledBlue.off();
+  vib.on();
+  delay(500);
+  vib.off();
+  while(digitalRead(WARNING_PIN) != PRESSED_BUTTON_LEVEL) {}
+  ledGreen.off();
 }
 
 
@@ -322,11 +335,11 @@ void showMemoryStatus(void) {
   ble.write(msg);
   ble.write("\n");
   ble.write("***Measurement Frequencies: \n");
-  msg = "Air Quality: Every ");
+  msg = "Air Quality: Every ";
   msg += values.getUint16AsString(values.aqFreq);
   msg += " ms\n";
   ble.write(msg);
-  msg = "UV Index: Every ");
+  msg = "UV Index: Every ";
   msg += values.getUint16AsString(values.uvFreq);
   msg += " ms\n";
   ble.write(msg);  
@@ -610,13 +623,16 @@ void sensorsInit() {
   // Air Quality init
   if (!ccs.begin()) {
     Serial.println("Failed to start Air Quality sensor! Please check your wiring.");
+    if (error) {
+      msg += "and";
+    }
     msg += " AQ ";
     error = 1;
   }
   else {
     Serial.println("Found CCS811 (Air Quality) sensor");
   }
-  */
+*/
   while (error) {
     ledRed.on();
     delay(1000);
