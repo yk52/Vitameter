@@ -68,7 +68,7 @@ void Values::clearAllMemory(void) {
 
 void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
-
+	showFreq = SHOW_FREQ * 1000;
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
 	if (thresholdsSet != 1) {
 		// Values initiated flag
@@ -399,7 +399,7 @@ bool Values::storeCO2(uint16_t val) {
 	if (co2_idx == CO2_ARRAY_SIZE) {
 		arrayFull = 1;
 	}
-	if (warnCO2 && val >= co2Thresh) {
+	if (val >= co2Thresh) {
 		setCO2Flag();
 	}
 	else {
@@ -410,11 +410,17 @@ bool Values::storeCO2(uint16_t val) {
 
 bool Values::storeVOC(uint16_t val) {
 	bool arrayFull = 0;
-	voc[voc_idx++] = val;
+	uint8_t vocVal = 0;
+	if (val > 255) {
+		vocVal = 255;
+	} else {
+		vocVal = val & 0xFF;
+	}
+	voc[voc_idx++] = vocVal;
 	if (voc_idx == VOC_ARRAY_SIZE) {
 		arrayFull = 1;
 	}
-	if (warnVOC && val >= vocThresh) {
+	if (val >= vocThresh) {
 		setVOCFlag();
 	}
 	else {
@@ -429,7 +435,7 @@ bool Values::storeTemp(float val) {
 	if (temp_idx == TEMP_ARRAY_SIZE) {
 		arrayFull = 1;
 	}
-	if (warnTemp && val >= tempThresh) {
+	if (val >= tempThresh) {
 		setTempFlag();
 	}
 	else {
@@ -525,10 +531,10 @@ bool Values::storeRAMToFlash(void) {
     		EEPROM.write(co2Flash_idx++, CO2Lo);
     		// Store the rest
     		EEPROM.write(vocFlash_idx++, voc[i]);
-    		EEPROM.write(tempFlash_idx++, temp[i]);
+    		// EEPROM.write(tempFlash_idx++, temp[i]);
     		setCurrentCO2FlashIdx(co2Flash_idx);
     		setCurrentVOCFlashIdx(vocFlash_idx);
-			setCurrentTempFlashIdx(tempFlash_idx);
+			// setCurrentTempFlashIdx(tempFlash_idx);
     	}
     }
     // Store UV

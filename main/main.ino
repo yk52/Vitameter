@@ -214,9 +214,9 @@ void takeMeasurements(void) {
     airTimeout += values.aqFreq;
     uint16_t c = ccs.geteCO2();
     uint16_t v = ccs.getTVOC();
-    arrayFull = values.storeCO2(c);
     values.storeVOC(v);
-    values.storeTemp(ccs.calculateTemperature());
+    arrayFull = values.storeCO2(c);
+    // values.storeTemp(ccs.calculateTemperature());
   }
   if (arrayFull) {
     values.storeRAMToFlash();
@@ -224,7 +224,6 @@ void takeMeasurements(void) {
 }
 
 void showMeasurements(void) {
-
 #ifdef SHOW_BLE
     msg = "";
     msg = "Measurement number: ";
@@ -262,8 +261,8 @@ void showMeasurements(void) {
     Serial.print(msg.c_str());
     
     if (values.warning) {
-      ble.write("Thresholds exceeded: \n");
-      
+      ble.write("Thresholds exceeded. Check your values\n");
+      Serial.print("Thresholds exceeded. Check your values\n");
     }
 #endif    
 }
@@ -512,15 +511,20 @@ void checkButtonState(void) {
     if (ms > waButtonPressed + 1200) {
       checkWA = 0;
       if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+        ledRed.on();
         if (!ignoreWarning && values.warning) {
           vib.off();
           ignoreWarning = 1;
           dismissWarning();
           ble.write("Warnings deactivated\n");
+          Serial.println("Warnings deactivated");
+          
         } else if (ignoreWarning) {
           ignoreWarning = 0;
           ble.write("Warnings activated\n");
+          Serial.println("Warnings activated");
         }
+        ledRed.off();
       }    
     } else if (ms > waButtonPressed + 500) {
       if (digitalRead(WARNING_PIN) == !PRESSED_BUTTON_LEVEL) {

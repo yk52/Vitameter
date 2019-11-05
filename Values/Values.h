@@ -38,10 +38,7 @@ class Values {
 		// Each bit/flag stands for one warning. Flag is set to 1 if value exceeded.
 		// x | x | CO2 (4)| VOC (3)| TEMP (2)| UVI (1)| STEPS (0)|
 		uint8_t warning = 0;
-		bool warnUVI;
-		bool warnTemp;
-		bool warnVOC;
-		bool warnCO2;
+
 		uint8_t stepMask = 0x01;
 		uint8_t uviMask = 0x02;
 		uint8_t tempMask = 0x04;
@@ -72,7 +69,7 @@ class Values {
 		// Ram Storage arrays
 		uint16_t co2[200] = {0};  // in ppm. in flash memory, its divided by 100 to fit in a byte
 		uint16_t co2_idx;
-		uint16_t voc[200] = {0}; // in ppb, bzw. mg/m3
+		uint8_t voc[200] = {0}; // in ppb, bzw. mg/m3
 		uint16_t voc_idx;
 		uint8_t uvi[200] = {0};   // UV index
 		uint16_t uvi_idx;
