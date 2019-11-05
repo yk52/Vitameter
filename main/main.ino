@@ -131,35 +131,6 @@ void loop() {
       showMeasurements();
       showTimeout += values.showFreq;
     }
-
- /*   //_____ Go sleep until next timeout ________________________________ TODO wake up every 30 s? Leave this as it is for starters. keep pedo enabled to avoid this state
-
-    if (!(checkBT || checkPW || checkWA) && !values.pedoEnable && !values.warning) {
-      ms = millis();
-      if (uvTimeout > ms) {
-        uint32_t timeLeft = uvTimeout - ms;
-        if (timeLeft > 2000) {
-          delay(500);
-          gpio_wakeup_enable(GPIO_NUM_36, GPIO_INTR_LOW_LEVEL);
-          gpio_wakeup_enable(GPIO_NUM_39, GPIO_INTR_LOW_LEVEL);
-          // gpio_wakeup_enable(GPIO_NUM_23, GPIO_INTR_LOW_LEVEL); // TODO add back in on new one
-          esp_sleep_enable_gpio_wakeup();
-          goLightSleepTimeout(timeLeft - 500);
-          if (esp_sleep_get_wakeup_cause() == 7) {
-            if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
-              checkPW = 1; 
-              pwButtonPressed = ms;
-            } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
-              checkBT = 1; 
-              btButtonPressed = ms;
-            } else if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
-              checkWA = 1; 
-              btButtonPressed = ms;
-            }
-          }
-        }
-      }
-    }*/
   }
 }  
 
@@ -172,6 +143,14 @@ void sendDataOverUart(void) {
 
   ble.write("Print data over Serial Port...\n");
   Serial.println(values.prepareAllData().c_str());
+  Serial.print("Co2 flash idx ");
+  Serial.println(values.getCurrentCO2FlashIdx());
+  
+  Serial.print("voc flash idx ");
+  Serial.println(values.getCurrentVOCFlashIdx());
+
+  Serial.print("UVI flash idx ");
+  Serial.println(values.getCurrentUVIFlashIdx());
   delay(5000); 
   ledBlue.off();  
 }
@@ -359,13 +338,13 @@ void showMemoryStatus(void) {
   Serial.println("\n");  
   Serial.println("***Flash Memory:");
   Serial.print("Air Quality Data: ");
-  uint16_t currIdx = values.getCurrentCO2FlashIdx() - CO2_FLASH_IDX_START;
+  uint16_t currIdx = values.getCurrentVOCFlashIdx();
   ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("UVI Data: ");
   Serial.print(values.getUint16AsString(currIdx).c_str());
   Serial.println("/18000");
-  currIdx = values.getCurrentUVIFlashIdx()  - UVI_FLASH_IDX_START;
+  currIdx = values.getCurrentUVIFlashIdx();
   ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("\n\n");
@@ -578,14 +557,14 @@ void checkBLE() {
     Serial.println("Erase Memory!");
     ble.write("Erase Memory!\n");
     values.clearMemory = 0;
-    for (int i=0; i<6; i++) {
+    for (int i=0; i<4; i++) {
       ledBlue.on();
       delay(500);
       ledBlue.off();
       delay(500);
     }
     values.clearAllMemory();
-    if (values.getCurrentCO2FlashIdx() == CO2_FLASH_IDX_START) {
+    if (values.getCurrentCO2FlashIdx() == 0) {
       Serial.println("Successfully cleared Memory!");
     } else {
       Serial.println("Failed.");

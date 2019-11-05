@@ -40,17 +40,17 @@ uint32_t showFreq = 0;
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
 	// Relative to IDX_START
-	EEPROM.write(CO2_FLASH_IDX_ADDR_LO, CO2_FLASH_IDX_START & 0xFF);
-	EEPROM.write(CO2_FLASH_IDX_ADDR_HI, (CO2_FLASH_IDX_START >> 8) & 0xFF);
+	EEPROM.write(CO2_FLASH_IDX_ADDR_LO, 0x00);
+	EEPROM.write(CO2_FLASH_IDX_ADDR_HI, 0x00);
 
-	EEPROM.write(VOC_FLASH_IDX_ADDR_LO, VOC_FLASH_IDX_START & 0xFF);
-	EEPROM.write(VOC_FLASH_IDX_ADDR_HI, (VOC_FLASH_IDX_START >> 8) & 0xFF);
+	EEPROM.write(VOC_FLASH_IDX_ADDR_LO, 0x00);
+	EEPROM.write(VOC_FLASH_IDX_ADDR_HI, 0x00);
 
-	EEPROM.write(UVI_FLASH_IDX_ADDR_LO, UVI_FLASH_IDX_START & 0xFF);
-	EEPROM.write(UVI_FLASH_IDX_ADDR_HI, (UVI_FLASH_IDX_START >> 8) & 0xFF);
+	EEPROM.write(UVI_FLASH_IDX_ADDR_LO, 0x00);
+	EEPROM.write(UVI_FLASH_IDX_ADDR_HI, 0x00);
 
-	EEPROM.write(TEMP_FLASH_IDX_ADDR_LO, TEMP_FLASH_IDX_START & 0xFF);
-	EEPROM.write(TEMP_FLASH_IDX_ADDR_HI, (TEMP_FLASH_IDX_START >> 8) & 0xFF);
+	EEPROM.write(TEMP_FLASH_IDX_ADDR_LO, 0x00);
+	EEPROM.write(TEMP_FLASH_IDX_ADDR_HI, 0x00);
 
 	EEPROM.write(STEPS_FLASH_ADDR_HI, 0x00);
 	EEPROM.write(STEPS_FLASH_ADDR_LO, 0x00);
@@ -419,7 +419,7 @@ bool Values::storeVOC(uint16_t val) {
 	if (val > 255) {
 		vocVal = 255;
 	} else {
-		vocVal = val & 0xFF;
+		vocVal = (uint8_t) val;
 	}
 	voc[voc_idx++] = vocVal;
 	if (voc_idx == VOC_ARRAY_SIZE) {
@@ -519,11 +519,12 @@ bool Values::storeRAMToFlash(void) {
     EEPROM.write(STEPS_FLASH_ADDR_HI, stepHi);
 
     // Store Data from CCS811: CO2, TVOC and Temperature
-    uint32_t co2Flash_idx = getCurrentCO2FlashIdx();
+    uint16_t idx = getCurrentCO2FlashIdx();
+    uint32_t co2Flash_idx = idx + CO2_FLASH_IDX_START;
     // uint16_t tempFlash_idx = getCurrentTempFlashIdx();
 
     for (int i = 0; i < co2_idx; i++) {
-    	if (co2Flash_idx > CO2_FLASH_IDX_STOP)) {
+    	if (idx >= CO2_STORAGE_SIZE) {
     		overflow = 1;
     		break;
     	}
@@ -533,14 +534,15 @@ bool Values::storeRAMToFlash(void) {
     	    uint8_t CO2Hi = (co2[i] >> 8) & 0xFF;
     		EEPROM.write(co2Flash_idx++, CO2Hi);
     		EEPROM.write(co2Flash_idx++, CO2Lo);
+    		idx += 2;
     	}
     }
-	setCurrentCO2FlashIdx(co2Flash_idx);
+	setCurrentCO2FlashIdx(idx);
 
-
-    uint32_t vocFlash_idx = getCurrentVOCFlashIdx();
+	idx = getCurrentVOCFlashIdx();
+    uint32_t vocFlash_idx = idx + VOC_FLASH_IDX_START;
     for (int i = 0; i < voc_idx; i++) {
-    	if (vocFlash_idx > VOC_FLASH_IDX_STOP) {
+    	if (idx >= VOC_STORAGE_SIZE) {
     		overflow = 1;
     		break;
     	}
@@ -548,26 +550,27 @@ bool Values::storeRAMToFlash(void) {
     		// Store the rest
     		// EEPROM.write(tempFlash_idx++, temp[i]);
     		EEPROM.write(vocFlash_idx++, voc[i]);
-    		vocFlash_idx++;
+    		idx++;
     	}
     }
-	setCurrentVOCFlashIdx(vocFlash_idx);
+	setCurrentVOCFlashIdx(idx);
 	// setCurrentTempFlashIdx(tempFlash_idx);
 
 
     // Store UV
-    uint32_t uviFlash_idx = getCurrentUVIFlashIdx();
+	idx = getCurrentUVIFlashIdx();
+    uint32_t uviFlash_idx = idx + UVI_FLASH_IDX_START;
     for (int i = 0; i < uvi_idx; i++) {
-    	if (uviFlash_idx >= (UVI_FLASH_IDX_STOP - UVI_FLASH_IDX_START)) {
+    	if (idx >= UVI_STORAGE_SIZE) {
     		overflow = 1;
     		break;
     	}
     	else {
     		EEPROM.write(uviFlash_idx++, uvi[i]);
-    		uviFlash_idx++;
+    		idx++;
     	}
     }
-	setCurrentUVIFlashIdx(uviFlash_idx);
+	setCurrentUVIFlashIdx(idx);
 
     co2_idx = 0;
     voc_idx = 0;
@@ -642,9 +645,9 @@ std::string Values::prepareAllData() {
 	 **************************************************************************/
 	data += "CO2 Data: ";
 	uint16_t currentFlashIdx = getCurrentCO2FlashIdx();
-	if (currentFlashIdx != CO2_FLASH_IDX_START) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
+	if (currentFlashIdx != 0) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
 		int address = CO2_FLASH_IDX_START;
-		for (int i = 0; i < currentFlashIdx - CO2_FLASH_IDX_START; i++) {			// get data from flash
+		for (int i = 0; i < (currentFlashIdx / 2); i++) {			// get data from flash
 			uint16_t valueHi = EEPROM.read(address++);
 			uint8_t valueLo = EEPROM.read(address++);
 			uint16_t value16 = (valueHi << 8) | valueLo;
@@ -666,18 +669,17 @@ std::string Values::prepareAllData() {
 	 **************************************************************************/
 	data += "VOC Data: ";
 	currentFlashIdx = getCurrentVOCFlashIdx();
-	if (currentFlashIdx != VOC_FLASH_IDX_START) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
+	if (currentFlashIdx != 0) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
 		int address = VOC_FLASH_IDX_START;
-		int i;
-		for (i = 0; i < currentFlashIdx - VOC_FLASH_IDX_START; i++) {			// get data from flash
-			uint8_t value = EEPROM.read(address);
+
+		for (int i = 0; i < currentFlashIdx; i++) {			// get data from flash
+			uint8_t value = EEPROM.read(address++);
 			data += getUint8AsString(value);
 			data += ", ";
-			address++;
 		}
 	}
-	int j;
-	for (j = 0; j < voc_idx; j++) {							// get data current array
+
+	for (int j = 0; j < voc_idx; j++) {							// get data current array
 		data += getUint16AsString(voc[j]);
 		if (j != voc_idx - 1) {
 			data += ", ";
@@ -713,18 +715,16 @@ std::string Values::prepareAllData() {
 	 **************************************************************************/
 	data += "UVI Data: ";
 	currentFlashIdx = getCurrentUVIFlashIdx();
-	if (currentFlashIdx != UVI_FLASH_IDX_START) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
+	if (currentFlashIdx != 0) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
 		int address = UVI_FLASH_IDX_START;
-		int i;
-		for (i = 0; i < currentFlashIdx - UVI_FLASH_IDX_START; i++) {			// get data from flash
-			uint8_t value = EEPROM.read(address);
+		for (int i = 0; i < currentFlashIdx; i++) {			// get data from flash
+			uint8_t value = EEPROM.read(address++);
 			data += getUint8AsString(value);
 			data += ", ";
-			address++;
 		}
 	}
-	int k;
-	for (k = 0; k < uvi_idx; k++) {							// get data current array
+
+	for (int k = 0; k < uvi_idx; k++) {							// get data current array
 		data += getUint8AsString(uvi[k]);
 		if (k != uvi_idx - 1) {
 			data += ", ";
