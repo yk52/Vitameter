@@ -51,6 +51,9 @@ void Values::setFlashIndexToStart(void) {
 	EEPROM.write(TEMP_FLASH_IDX_ADDR_LO, TEMP_FLASH_IDX_START & 0xFF);
 	EEPROM.write(TEMP_FLASH_IDX_ADDR_HI, (TEMP_FLASH_IDX_START >> 8) & 0xFF);
 
+	EEPROM.write(STEPS_FLASH_ADDR_HI, 0x00);
+	EEPROM.write(STEPS_FLASH_ADDR_LO, 0x00);
+
 	EEPROM.commit();
 }
 
@@ -65,11 +68,7 @@ void Values::clearAllMemory(void) {
 
 void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
-	// TODO
-	setUVFreq(UV_FREQ);
-	setAQFreq(AQ_FREQ);
-	setShowFreq(SHOW_FREQ);
-	//
+
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
 	if (thresholdsSet != 1) {
 		// Values initiated flag
@@ -394,10 +393,11 @@ void Values::setUVIDurationThresh(uint8_t val) {
 	uviDurationThresh = val;
 }
 
-void Values::storeCO2(uint16_t val) {
+bool Values::storeCO2(uint16_t val) {
+	bool arrayFull = 0;
 	co2[co2_idx++] = val;
 	if (co2_idx == CO2_ARRAY_SIZE) {
-		storeRAMToFlash();
+		arrayFull = 1;
 	}
 	if (warnCO2 && val >= co2Thresh) {
 		setCO2Flag();
@@ -405,12 +405,14 @@ void Values::storeCO2(uint16_t val) {
 	else {
 		clearCO2Flag();
 	}
+	return arrayFull;
 }
 
-void Values::storeVOC(uint16_t val) {
+bool Values::storeVOC(uint16_t val) {
+	bool arrayFull = 0;
 	voc[voc_idx++] = val;
 	if (voc_idx == VOC_ARRAY_SIZE) {
-		storeRAMToFlash();
+		arrayFull = 1;
 	}
 	if (warnVOC && val >= vocThresh) {
 		setVOCFlag();
@@ -418,12 +420,14 @@ void Values::storeVOC(uint16_t val) {
 	else {
 		clearVOCFlag();
 	}
+	return arrayFull;
 }
 
-void Values::storeTemp(float val) {
+bool Values::storeTemp(float val) {
+	bool arrayFull = 0;
 	temp[temp_idx++] = val;
 	if (temp_idx == TEMP_ARRAY_SIZE) {
-		storeRAMToFlash();
+		arrayFull = 1;
 	}
 	if (warnTemp && val >= tempThresh) {
 		setTempFlag();
@@ -431,6 +435,7 @@ void Values::storeTemp(float val) {
 	else {
 		clearTempFlag();
 	}
+	return arrayFull;
 }
 
 bool Values::storeSteps(uint16_t val) {
@@ -448,10 +453,11 @@ void Values::resetSteps(void) {
 }
 
 
-void Values::storeUVI(uint8_t val) {
+bool Values::storeUVI(uint8_t val) {
 	uvi[uvi_idx++] = val;
+	bool arrayFull = 0;
 	if (uvi_idx == UVI_ARRAY_SIZE) {
-		storeRAMToFlash();
+		arrayFull = 1;
 	}
 	if (val >= uviThresh) {
 		uviDuration++;
@@ -462,6 +468,7 @@ void Values::storeUVI(uint8_t val) {
 	else {
 		clearUVIFlag();
 	}
+	return arrayFull;
 }
 
 void Values::setCurrentCO2FlashIdx(uint16_t idx) {

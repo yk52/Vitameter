@@ -131,12 +131,12 @@ class Values {
 		uint8_t getLastUVIDuration(void);
 
 		// Store values in RAM and check thresholds at the same time.
-		void storeCO2(uint16_t);
-		void storeVOC(uint16_t);
-		void storeTemp(float);
+		bool storeCO2(uint16_t);
+		bool storeVOC(uint16_t);
+		bool storeTemp(float);
 		bool storeSteps(uint16_t);
 		void resetSteps(void);
-		void storeUVI(uint8_t);
+		bool storeUVI(uint8_t);
 		bool storeRAMToFlash(void);
 
 		// take the message sent from the phone and triggers respective functions, sets

@@ -54,6 +54,7 @@ volatile uint32_t pwButtonPressed = 0;
 volatile uint32_t waButtonPressed = 0;
 
 // other timers
+uint32_t wakeUpTime = 0;
 uint32_t warningMs = 900000;  // 15 min
 uint32_t ms = 0;
 uint32_t warningTimeout = 0;
@@ -172,6 +173,7 @@ void sendDataOverUart(void) {
 }
 
 void takeMeasurements(void) {
+  bool arrayFull = 0;
   if (values.pedoEnable && ms > pedoTimeout) {
     uint16_t x = pedo.getPedo();
     // Step registered
@@ -204,34 +206,24 @@ void takeMeasurements(void) {
   if (ms > uvTimeout) {
     uvTimeout += values.uvFreq;
     uint8_t u = uv.readUVI();
-    values.storeUVI(u);
+    arrayFull = values.storeUVI(u);
   }
-  
   
   if (ms > airTimeout) {
     ccs.readData();
     airTimeout += values.aqFreq;
     uint16_t c = ccs.geteCO2();
     uint16_t v = ccs.getTVOC();
-    values.storeCO2(c);
+    arrayFull = values.storeCO2(c);
     values.storeVOC(v);
     values.storeTemp(ccs.calculateTemperature());
+  }
+  if (arrayFull) {
+    values.storeRAMToFlash();
   }
 }
 
 void showMeasurements(void) {
-#ifdef SHOW_SERIAL
-    Serial.print("Measurement number: ");
-    Serial.println(values.co2_idx);
-    Serial.print("CO2: ");
-    Serial.println(values.getLastCO2());
-    Serial.print("TVOC: ");
-    Serial.println(values.getLastVOC());
-    Serial.print("UV: ");
-    Serial.println(values.getLastUVI());
-    Serial.println();
-    Serial.println();
-#endif
 
 #ifdef SHOW_BLE
     msg = "";
@@ -239,23 +231,36 @@ void showMeasurements(void) {
     msg += values.getUint8AsString(values.uvi_idx);
     msg += "\n";
     ble.write(msg);
+    Serial.print(msg.c_str());
     msg = "CO2: ";
     msg += values.getUint16AsString(values.getLastCO2());
     msg += "\n";
     ble.write(msg);
+    Serial.print(msg.c_str());
     msg = "TVOC: ";
     msg += values.getUint8AsString(values.getLastVOC());
     msg += "\n";
     ble.write(msg);
+    Serial.print(msg.c_str());
+    /*
+    msg = "Temp: ";
+    msg += values.getUint8AsString(values.getLastTemp());
+    msg += "\n";
+    ble.write(msg);
+    Serial.print(msg.c_str());
+    */
     msg = "UVI: ";
     msg += values.getUint8AsString(values.getLastUVI());
     msg += "\n";
     ble.write(msg);
+    Serial.print(msg.c_str());
     msg = "Steps: ";
     msg += values.getUint16AsString(values.getLastStep());
     msg += "\n";
     msg += "\n";
     ble.write(msg);
+    Serial.print(msg.c_str());
+    
     if (values.warning) {
       ble.write("Thresholds exceeded: \n");
       
@@ -300,10 +305,10 @@ void setTimeouts() {
 
 void showMemoryStatus(void) {
   msg = "";
-  uint32_t sec = ms / 1000;
+  uint32_t sec = (ms - wakeUpTime) / 1000;
   uint8_t runningSec = sec % 60;
   uint8_t runningMin = (sec / 60) % 60;
-  uint16_t runningHrs = ms / 3600000;
+  uint16_t runningHrs = (ms - wakeUpTime) / 3600000;
   msg = values.getUint16AsString(runningHrs);
   msg += "h ";
   msg += values.getUint8AsString(runningMin);
@@ -333,6 +338,15 @@ void showMemoryStatus(void) {
   msg += " ms\n";
   ble.write(msg);
   Serial.println(msg.c_str());  
+  msg = "Show Measurement: Every ";
+  msg += values.getUint16AsString(values.showFreq);
+  msg += " ms\n";
+  Serial.println(msg.c_str());
+  ble.write(msg);
+  msg = "UV Index: Every ";
+  msg += values.getUint16AsString(values.uvFreq);
+  msg += " ms\n";
+  ble.write(msg);
   ble.write("\n\n");  
   ble.write("***Flash Memory: \n");
   ble.write("Air Quality Data: ");
@@ -367,6 +381,8 @@ void showMemoryStatus(void) {
   Serial.print("UVI Data: ");
   Serial.print(values.getUint16AsString((values.uvi_idx)).c_str());
   Serial.println("/200\n\n");
+  ble.write("***Thresholds: \n");
+  Serial.println("***Thresholds: ");
   showThresholds();
 }
 
@@ -392,21 +408,6 @@ void showThresholds(void) {
   msg += "\n";
   ble.write(msg);
   Serial.print(msg.c_str());
-
-  // ble.write("Temp thresh: ");
-  // Serial.println(EEPROM.read(TEMP_THRESH_ADDR));
-/*
-  Serial.print("UVI thresh: ");
-  Serial.println(values.getUVIThresh());
-  Serial.print("CO2 thresh: ");
-  Serial.println(values.getCO2Thresh());
-  Serial.print("VOC thresh: ");
-  Serial.println(values.getVOCThresh());
-  // Serial.print("Temp thresh: ");
-  // Serial.println(values.getTempThresh());
-  Serial.print("Step goal: ");
-  Serial.println(values.getStepGoal());
-  */
 }
 
 void wakeUp() {
@@ -419,7 +420,8 @@ void wakeUp() {
     showThresholds();
     ledGreen.on();
     sensorsInit();
-    ms = 0;
+    values.resetSteps();
+    wakeUpTime = millis();
     setTimeouts();
   } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
     // To clear memory: fist press BT. Then press WA for at least 3 sec.
