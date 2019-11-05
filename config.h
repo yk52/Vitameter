@@ -48,7 +48,7 @@
 
 // Storage size in Flash in Bytes
 #define CO2_STORAGE_SIZE		36000	// Possible to store measurements every 5 sec for 24 h ( = 17280). CO2 needs 2 Byte
-#define VOC_STORAGE_SIZE		36000
+#define VOC_STORAGE_SIZE		18000
 #define TEMP_STORAGE_SIZE		18000
 #define UVI_STORAGE_SIZE		18000
 
@@ -57,10 +57,10 @@
 #define CO2_FLASH_IDX_STOP			100 + CO2_STORAGE_SIZE
 #define VOC_FLASH_IDX_START			40000
 #define VOC_FLASH_IDX_STOP			40000 + VOC_STORAGE_SIZE
-#define UVI_FLASH_IDX_START			80000
-#define UVI_FLASH_IDX_STOP			80000 + UVI_STORAGE_SIZE
-#define TEMP_FLASH_IDX_START		100000
-#define TEMP_FLASH_IDX_STOP			100000 + TEMP_STORAGE_SIZE
+#define UVI_FLASH_IDX_START			60000
+#define UVI_FLASH_IDX_STOP			60000 + UVI_STORAGE_SIZE
+#define TEMP_FLASH_IDX_START		80000
+#define TEMP_FLASH_IDX_STOP			80000 + TEMP_STORAGE_SIZE
 
 
 // _____________________
@@ -95,9 +95,9 @@
 
 // Frequencies
 #define PEDO_FREQ				50
-#define AQ_FREQ					3 	// 6s for demo. actually 10 min
-#define UV_FREQ					3	// 6s for demo. actually 1 min
-#define SHOW_FREQ				3	// 6s for now.
+#define AQ_FREQ					5 	// 6s for demo. actually 10 min
+#define UV_FREQ					5	// 6s for demo. actually 1 min
+#define SHOW_FREQ				5	// 6s for now.
 
 
 // Pedometer

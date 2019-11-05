@@ -39,6 +39,7 @@ uint32_t showFreq = 0;
 
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
+	// Relative to IDX_START
 	EEPROM.write(CO2_FLASH_IDX_ADDR_LO, CO2_FLASH_IDX_START & 0xFF);
 	EEPROM.write(CO2_FLASH_IDX_ADDR_HI, (CO2_FLASH_IDX_START >> 8) & 0xFF);
 
@@ -68,7 +69,7 @@ void Values::clearAllMemory(void) {
 
 void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
-	showFreq = SHOW_FREQ * 1000;
+
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
 	if (thresholdsSet != 1) {
 		// Values initiated flag
@@ -104,7 +105,11 @@ void Values::init(void) {
 		stepGoal = getStepGoal();
 		uvFreq = getUVFreq();
 		aqFreq = getAQFreq();
-		showFreq = getShowFreq();
+		showFreq = showFreq = SHOW_FREQ * 1000;
+
+		// For now TODO. delete later
+		uvFreq = UV_FREQ*1000;
+		aqFreq = AQ_FREQ*1000;
 	}
 }
 
@@ -514,12 +519,11 @@ bool Values::storeRAMToFlash(void) {
     EEPROM.write(STEPS_FLASH_ADDR_HI, stepHi);
 
     // Store Data from CCS811: CO2, TVOC and Temperature
-    uint16_t co2Flash_idx = getCurrentCO2FlashIdx();
-    uint16_t vocFlash_idx = getCurrentVOCFlashIdx();
-    uint16_t tempFlash_idx = getCurrentTempFlashIdx();
+    uint32_t co2Flash_idx = getCurrentCO2FlashIdx();
+    // uint16_t tempFlash_idx = getCurrentTempFlashIdx();
 
     for (int i = 0; i < co2_idx; i++) {
-    	if (co2Flash_idx > CO2_FLASH_IDX_STOP) {
+    	if (co2Flash_idx > CO2_FLASH_IDX_STOP)) {
     		overflow = 1;
     		break;
     	}
@@ -529,32 +533,47 @@ bool Values::storeRAMToFlash(void) {
     	    uint8_t CO2Hi = (co2[i] >> 8) & 0xFF;
     		EEPROM.write(co2Flash_idx++, CO2Hi);
     		EEPROM.write(co2Flash_idx++, CO2Lo);
-    		// Store the rest
-    		EEPROM.write(vocFlash_idx++, voc[i]);
-    		// EEPROM.write(tempFlash_idx++, temp[i]);
-    		setCurrentCO2FlashIdx(co2Flash_idx);
-    		setCurrentVOCFlashIdx(vocFlash_idx);
-			// setCurrentTempFlashIdx(tempFlash_idx);
     	}
     }
+	setCurrentCO2FlashIdx(co2Flash_idx);
+
+
+    uint32_t vocFlash_idx = getCurrentVOCFlashIdx();
+    for (int i = 0; i < voc_idx; i++) {
+    	if (vocFlash_idx > VOC_FLASH_IDX_STOP) {
+    		overflow = 1;
+    		break;
+    	}
+    	else {
+    		// Store the rest
+    		// EEPROM.write(tempFlash_idx++, temp[i]);
+    		EEPROM.write(vocFlash_idx++, voc[i]);
+    		vocFlash_idx++;
+    	}
+    }
+	setCurrentVOCFlashIdx(vocFlash_idx);
+	// setCurrentTempFlashIdx(tempFlash_idx);
+
+
     // Store UV
-    uint16_t uviFlash_idx = getCurrentUVIFlashIdx();
+    uint32_t uviFlash_idx = getCurrentUVIFlashIdx();
     for (int i = 0; i < uvi_idx; i++) {
-    	if (uviFlash_idx > UVI_FLASH_IDX_STOP) {
+    	if (uviFlash_idx >= (UVI_FLASH_IDX_STOP - UVI_FLASH_IDX_START)) {
     		overflow = 1;
     		break;
     	}
     	else {
     		EEPROM.write(uviFlash_idx++, uvi[i]);
-    		setCurrentUVIFlashIdx(uviFlash_idx);
     		uviFlash_idx++;
     	}
     }
+	setCurrentUVIFlashIdx(uviFlash_idx);
 
     co2_idx = 0;
     voc_idx = 0;
     uvi_idx = 0;
     temp_idx = 0;
+    steps = 0;
     EEPROM.commit();
 
     if (overflow) {
@@ -630,10 +649,11 @@ std::string Values::prepareAllData() {
 			uint8_t valueLo = EEPROM.read(address++);
 			uint16_t value16 = (valueHi << 8) | valueLo;
 			data += getUint16AsString(value16);
+
 			data += ", ";
 		}
 	}
-	for (int i = 0; i < co2_idx; i++) {							// get data current array 		length ???
+	for (int i = 0; i < co2_idx; i++) {							// get data current array
 		data += getUint16AsString(co2[i]);
 		if (i != co2_idx - 1) {
 			data += ", ";
@@ -657,7 +677,7 @@ std::string Values::prepareAllData() {
 		}
 	}
 	int j;
-	for (j = 0; j < voc_idx; j++) {							// get data current array 		length ???
+	for (j = 0; j < voc_idx; j++) {							// get data current array
 		data += getUint16AsString(voc[j]);
 		if (j != voc_idx - 1) {
 			data += ", ";
@@ -681,7 +701,7 @@ std::string Values::prepareAllData() {
 		}
 	}
 	int l;
-	for (l = 0; l < temp_idx; l++) {							// get data current array 		length ???
+	for (l = 0; l < temp_idx; l++) {							// get data current array
 		data += getUint8AsString(temp[l]);
 		if (l != temp_idx - 1) {
 			data += ", ";
@@ -704,7 +724,7 @@ std::string Values::prepareAllData() {
 		}
 	}
 	int k;
-	for (k = 0; k < uvi_idx; k++) {							// get data current array 		length ???
+	for (k = 0; k < uvi_idx; k++) {							// get data current array
 		data += getUint8AsString(uvi[k]);
 		if (k != uvi_idx - 1) {
 			data += ", ";
@@ -816,7 +836,7 @@ std::string Values::prepareUVIData() {
 	}
 	int k;
 	data += "UVI Array: ";
-	for (k = 0; k < uvi_idx; k++) {							// get data current array 		length ???
+	for (k = 0; k < uvi_idx; k++) {							// get data current array
 		data += getUint8AsString(uvi[k]);
 		data += "\n";
 	}
@@ -871,10 +891,10 @@ std::string Values::prepareStepData() {
 		} else if (parameter.compare("setShowFreq") == 0) {
 			setShowFreq(value);
 			return "setStepGoal";
-		} else if (parameter.compare("setUvFreq") == 0) {	// TODO or whatever annette wants
+		} else if (parameter.compare("setUVFreq") == 0) {
 			setUVFreq(value);
 			return "setUvFreq";
-		} else if (parameter.compare("setAqFreq") == 0) {
+		} else if (parameter.compare("setAQFreq") == 0) {
 			setAQFreq(value);
 			return "setStepGoal";
 		} else if (parameter.compare("setSunscreenFactor") == 0) {

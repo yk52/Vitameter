@@ -115,7 +115,11 @@ void loop() {
   // Light sleep mode if Vitameter is turned off_____________________
   if (state == LIGHT_SLEEP) {
     if (values.uvi_idx >= 1) {
-      values.storeRAMToFlash();
+      bool memFull = values.storeRAMToFlash();
+      if (memFull) {
+        ble.write("Memory capacity exceeded. Data overflow.\n");
+        Serial.print("Memory capacity exceeded. Data overflow.\n");
+      }
     }
     goLightSleep();
   }
@@ -219,7 +223,11 @@ void takeMeasurements(void) {
     // values.storeTemp(ccs.calculateTemperature());
   }
   if (arrayFull) {
-    values.storeRAMToFlash();
+    bool memFull = values.storeRAMToFlash();
+    if (memFull) {
+      ble.write("Memory capacity exceeded. Data overflow.\n");
+      Serial.print("Memory capacity exceeded. Data overflow.\n");
+    }
   }
 }
 
@@ -241,13 +249,6 @@ void showMeasurements(void) {
     msg += "\n";
     ble.write(msg);
     Serial.print(msg.c_str());
-    /*
-    msg = "Temp: ";
-    msg += values.getUint8AsString(values.getLastTemp());
-    msg += "\n";
-    ble.write(msg);
-    Serial.print(msg.c_str());
-    */
     msg = "UVI: ";
     msg += values.getUint8AsString(values.getLastUVI());
     msg += "\n";
@@ -259,7 +260,13 @@ void showMeasurements(void) {
     msg += "\n";
     ble.write(msg);
     Serial.print(msg.c_str());
-    
+    /*
+    msg = "Temp: ";
+    msg += values.getUint8AsString(values.getLastTemp());
+    msg += "\n";
+    ble.write(msg);
+    Serial.print(msg.c_str());
+    */
     if (values.warning) {
       ble.write("Thresholds exceeded. Check your values\n");
       Serial.print("Thresholds exceeded. Check your values\n");
@@ -678,14 +685,16 @@ void handleWarning() {
     ledRed.off();
   } else {
     ledRed.on();
-    if (!ignoreWarning && (warningVibTimeout < ms)) {
-      warningVibCounter++;
-      warningVibTimeout = ms + 500;
-      vib.toggle();
+    if (warningTimeout < ms) {
+      if (!ignoreWarning && (warningVibTimeout < ms)) {
+        warningVibCounter++;
+        warningVibTimeout = ms + 500;
+        vib.toggle();
+      }
+      if (warningVibCounter >= 4) {
+        dismissWarning();
+      }    
     }
-    if (warningVibCounter >= 4) {
-      dismissWarning();
-    }    
   }    
 }
 
