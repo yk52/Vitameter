@@ -94,10 +94,10 @@
 
 
 // Frequencies
-#define PEDO_FREQ				30
-#define AQ_FREQ					6 	// 6s for demo. actually 10 min
-#define UV_FREQ					6	// 6s for demo. actually 1 min
-#define SHOW_FREQ				6	// 6s for now.
+#define PEDO_FREQ				50
+#define AQ_FREQ					3 	// 6s for demo. actually 10 min
+#define UV_FREQ					3	// 6s for demo. actually 1 min
+#define SHOW_FREQ				3	// 6s for now.
 
 
 // Pedometer
@@ -106,8 +106,8 @@
 #define Z_PIN 							35
 #define PEDO_CALIBRATION_SAMPLE_SIZE 	15
 #define PEDO_SAMPLE_SIZE 				15
-#define ACCL							50000
-#define WAIT_AFTER_STEP					300
+#define ACCL							55000
+#define WAIT_AFTER_STEP					400
 
 
 

@@ -325,6 +325,8 @@ float Values::getLastTemp(void) {
 uint16_t Values::getLastStep(void) {
 	return steps;
 }
+
+
 uint8_t Values::getLastUVI(void) {
 	return uvi[uvi_idx-1];
 }
@@ -620,8 +622,11 @@ std::string Values::prepareAllData() {
 	}
 	for (int i = 0; i < co2_idx; i++) {							// get data current array 		length ???
 		data += getUint16AsString(co2[i]);
-		data += "\n";
+		if (i != co2_idx - 1) {
+			data += ", ";
+		}
 	}
+	data += "\n";
 
 	/**************************************************************************
 	 *    						VOC
@@ -641,13 +646,16 @@ std::string Values::prepareAllData() {
 	int j;
 	for (j = 0; j < voc_idx; j++) {							// get data current array 		length ???
 		data += getUint16AsString(voc[j]);
-		data += "\n";
+		if (j != voc_idx - 1) {
+			data += ", ";
+		}
 	}
+	data += "\n";
 
 	/**************************************************************************
 	 *    						TEMP
 	 **************************************************************************/
-	data += "Temp Data: ";
+/*	data += "Temp Data: ";
 	currentFlashIdx = getCurrentTempFlashIdx();
 	if (currentFlashIdx != TEMP_FLASH_IDX_START) {								// if CurrentCO2FlashIdx is not at the starting position, get old data from flash
 		int address = TEMP_FLASH_IDX_START;
@@ -662,8 +670,10 @@ std::string Values::prepareAllData() {
 	int l;
 	for (l = 0; l < temp_idx; l++) {							// get data current array 		length ???
 		data += getUint8AsString(temp[l]);
-		data += "\n";
-	}
+		if (l != temp_idx - 1) {
+			data += ", ";
+		}
+	} */
 
 	/**************************************************************************
 	 *    						UVI
@@ -683,15 +693,25 @@ std::string Values::prepareAllData() {
 	int k;
 	for (k = 0; k < uvi_idx; k++) {							// get data current array 		length ???
 		data += getUint8AsString(uvi[k]);
-		data += "\n";
+		if (k != uvi_idx - 1) {
+			data += ", ";
+		}
 	}
-
+	data += "\n";
 
 	/**************************************************************************
 	 *    						Step
 	 **************************************************************************/
 	data += "Steps: ";
-	data += getUint16AsString(steps);
+	uint16_t tmp = 0;
+	if (steps == 0) {
+	    uint8_t stepLo = EEPROM.read(STEPS_FLASH_ADDR_LO);
+	    uint16_t stepHi = EEPROM.read(STEPS_FLASH_ADDR_HI);
+	    tmp = (stepHi << 8) | stepLo;
+	} else {
+		tmp = steps;
+	}
+	data += getUint16AsString(tmp);
 
 		/**************************************************************************
 	 *    						return

@@ -14,14 +14,10 @@
 #include "C:\Users\Yumi\Desktop\Vitameter\config.h"
 
 // For debugging reasons. Keep defines to see currently measured values shown over according channel.
-// #define SHOW_SERIAL
+#define SHOW_SERIAL
 #define SHOW_BLE
 
 uint8_t state = LIGHT_SLEEP;
-/*
-void setup() {}
-void loop() {}
-*/
 
 // Bluetooth related
 BLE_wcs ble;
@@ -29,6 +25,7 @@ std::string sent;
 std::string oldSent;
 std::string processed = "prodef";
 std::string msg = "";
+
 
 Values values;
 Adafruit_CCS811 ccs;
@@ -99,19 +96,6 @@ void setup() {
   pedo.calibrate();
   values.pedoEnable = 1;
   ble.init("Vitameter low energy");
-
-  ledRed.on();
-  ledBlue.on();
-  ledGreen.on();
-  while(digitalRead(POWER_PIN) != PRESSED_BUTTON_LEVEL) {}
-  ledRed.off();
-  while(digitalRead(BLUETOOTH_PIN) != PRESSED_BUTTON_LEVEL) {}
-  ledBlue.off();
-  vib.on();
-  delay(500);
-  vib.off();
-  while(digitalRead(WARNING_PIN) != PRESSED_BUTTON_LEVEL) {}
-  ledGreen.off();
 }
 
 
@@ -182,9 +166,8 @@ void sendDataOverUart(void) {
   values.dataWanted_all = 0;
 
   ble.write("Print data over Serial Port...\n");
-  Serial.println("all data wanted. Print data over serial port!");
   Serial.println(values.prepareAllData().c_str());
-  delay(500);        // TODO something like "while not done" needed?
+  delay(5000); 
   ledBlue.off();  
 }
 
@@ -193,7 +176,6 @@ void takeMeasurements(void) {
     uint16_t x = pedo.getPedo();
     // Step registered
     if (pedo.flag) {
-      // Serial.println(x);
       bool goalAchieved = values.storeSteps(x);
       if (goalAchieved) {
         // vibrate in short intervals
@@ -212,18 +194,20 @@ void takeMeasurements(void) {
       vibCounter++;
     }
     if (vibCounter > 2) {
-      ble.write("Step goal achieved\n"); // TODO too many bytes for ble.write?
+      ble.write("Step goal achieved\n");
       goalVib = 0;
       vibCounter= 0;
       vib.off();
     }
   }
+
   if (ms > uvTimeout) {
     uvTimeout += values.uvFreq;
     uint8_t u = uv.readUVI();
     values.storeUVI(u);
   }
-  /*
+  
+  
   if (ms > airTimeout) {
     ccs.readData();
     airTimeout += values.aqFreq;
@@ -233,7 +217,6 @@ void takeMeasurements(void) {
     values.storeVOC(v);
     values.storeTemp(ccs.calculateTemperature());
   }
-  */
 }
 
 void showMeasurements(void) {
@@ -288,10 +271,11 @@ void goLightSleepTimeout(uint64_t sleepMillis) {
 
 void goLightSleep() {
   ble.write("\nEnter sleep\n");
+  Serial.println("\nEnter sleep\n");
   detachInterrupt(digitalPinToInterrupt(POWER_PIN));
   detachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN));
   detachInterrupt(digitalPinToInterrupt(WARNING_PIN));
-  delay(1000);
+  delay(2000);
   values.clearAllWarnings();
   vib.off();
   ledGreen.off();
@@ -312,10 +296,6 @@ void setTimeouts() {
   uvTimeout = values.uvFreq + ms;
   airTimeout = values.aqFreq + ms;
   showTimeout = ms + values.showFreq;
-  // TODO
-  Serial.println(values.showFreq);
-  Serial.println(values.aqFreq);
-  Serial.println(values.uvFreq);
 }
 
 void showMemoryStatus(void) {
@@ -330,37 +310,63 @@ void showMemoryStatus(void) {
   msg += "min ";
   msg += values.getUint8AsString(runningSec);
   msg += "s\n";
-  ble.write("---Vitameter Status--- \n\n");
+  
+  ble.write("\n---Vitameter Status--- \n\n");
   ble.write("***Running Time: ");
   ble.write(msg);
   ble.write("\n");
+  Serial.println("\n---Vitameter Status--- \n");
+  Serial.print("***Running Time: ");
+  Serial.println(msg.c_str());
+  Serial.println("\n");
+  
   ble.write("***Measurement Frequencies: \n");
+  Serial.println("***Measurement Frequencies:");
+  
   msg = "Air Quality: Every ";
   msg += values.getUint16AsString(values.aqFreq);
   msg += " ms\n";
+  Serial.println(msg.c_str());
   ble.write(msg);
   msg = "UV Index: Every ";
   msg += values.getUint16AsString(values.uvFreq);
   msg += " ms\n";
-  ble.write(msg);  
+  ble.write(msg);
+  Serial.println(msg.c_str());  
   ble.write("\n\n");  
   ble.write("***Flash Memory: \n");
   ble.write("Air Quality Data: ");
+  Serial.println("\n");  
+  Serial.println("***Flash Memory:");
+  Serial.print("Air Quality Data: ");
   uint16_t currIdx = values.getCurrentCO2FlashIdx() - CO2_FLASH_IDX_START;
   ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("UVI Data: ");
+  Serial.print(values.getUint16AsString(currIdx).c_str());
+  Serial.println("/18000");
   currIdx = values.getCurrentUVIFlashIdx()  - UVI_FLASH_IDX_START;
   ble.write(values.getUint16AsString(currIdx));
   ble.write("/18000\n");
   ble.write("\n\n");
   ble.write("\n***Dynamic Memory: \n");
   ble.write("Air Quality Data: ");
-  ble.write(values.getUint16AsString((values.co2_idx)));
+  ble.write(values.getUint16AsString((values.co2_idx)).c_str());
   ble.write("/200\n");
   ble.write("UVI Data: ");
-  ble.write(values.getUint16AsString((values.uvi_idx)));
+  ble.write(values.getUint16AsString((values.uvi_idx)).c_str());
   ble.write("/200\n\n\n");
+  Serial.print("UVI Data: ");
+  Serial.print(values.getUint16AsString(currIdx).c_str());
+  Serial.println("/18000");
+  Serial.println("\n");
+  Serial.println("\n***Dynamic Memory:");
+  Serial.print("Air Quality Data: ");
+  Serial.print(values.getUint16AsString((values.co2_idx)).c_str());
+  Serial.println("/200");
+  Serial.print("UVI Data: ");
+  Serial.print(values.getUint16AsString((values.uvi_idx)).c_str());
+  Serial.println("/200\n\n");
   showThresholds();
 }
 
@@ -370,22 +376,26 @@ void showThresholds(void) {
   msg += values.getUint8AsString(values.getUVIThresh());
   msg += "\n";
   ble.write(msg);
+  Serial.print(msg.c_str());
   msg = "CO2 thresh: ";
   msg += values.getUint16AsString(values.getCO2Thresh());
   msg += "\n";
   ble.write(msg);
+  Serial.print(msg.c_str());
   msg = "VOC thresh: ";
   msg += values.getUint8AsString(values.getVOCThresh());
   msg += "\n";
   ble.write(msg);
+  Serial.print(msg.c_str());
   msg = "Step Goal: ";
   msg += values.getUint16AsString(values.getStepGoal());
   msg += "\n";
   ble.write(msg);
+  Serial.print(msg.c_str());
 
   // ble.write("Temp thresh: ");
   // Serial.println(EEPROM.read(TEMP_THRESH_ADDR));
-
+/*
   Serial.print("UVI thresh: ");
   Serial.println(values.getUVIThresh());
   Serial.print("CO2 thresh: ");
@@ -396,6 +406,7 @@ void showThresholds(void) {
   // Serial.println(values.getTempThresh());
   Serial.print("Step goal: ");
   Serial.println(values.getStepGoal());
+  */
 }
 
 void wakeUp() {
@@ -514,7 +525,7 @@ void checkButtonState(void) {
         ledRed.on();
         checkWA = 0;
         showMemoryStatus();
-        delay(300);
+        delay(1000);
         ledRed.off();
       }
     }
@@ -618,8 +629,7 @@ void sensorsInit() {
   else {
     Serial.println("Found VEML6075 (UV) sensor");
   }
-
-/*
+  
   // Air Quality init
   if (!ccs.begin()) {
     Serial.println("Failed to start Air Quality sensor! Please check your wiring.");
@@ -632,7 +642,7 @@ void sensorsInit() {
   else {
     Serial.println("Found CCS811 (Air Quality) sensor");
   }
-*/
+
   while (error) {
     ledRed.on();
     delay(1000);
@@ -641,6 +651,8 @@ void sensorsInit() {
     ble.write("Error: ");
     ble.write(msg);
     ble.write(" failed. Plug Battery in and out\n\n");
+    Serial.print(msg.c_str());
+    Serial.println(" failed.");
     if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
       state = LIGHT_SLEEP;
       return;
