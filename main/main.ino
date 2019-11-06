@@ -147,7 +147,7 @@ void sendDataOverUart(void) {
 
   // TODO for testing reasons
   Serial.print("co2 data points: ");
-  Serial.println(values.getCurrentCO2FlashIdx() + values.co2_idx);
+  Serial.println((values.getCurrentCO2FlashIdx() + values.co2_idx)/2);
   Serial.print("voc data points: ");
   Serial.println(values.getCurrentVOCFlashIdx() + values.voc_idx);
   Serial.print("uvi data points: ");
