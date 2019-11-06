@@ -403,27 +403,19 @@ void wakeUp() {
     wakeUpTime = millis();
     setTimeouts();
   } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
-    // To clear memory: fist press BT. Then press PW for at least 3 sec.
-    if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
-      ledBlue.on();
-      ledRed.on();
-      ledGreen.on();
-      delay(3000);
-      if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
-        values.clearMemory = 1;
-        ledRed.off();
-        ledBlue.off();
-        ledGreen.off();
-        checkBLE();
-      } else {
-        ledRed.off();
-        ledBlue.off();
-        ledGreen.off();
-        delay(1000);
-      }
-    } else {
-      sendDataOverUart();
-    }
+    // To clear memory: fist press BT. 
+    ledBlue.on();
+    ledRed.on();
+    ledGreen.on();
+    sendDataOverUart();
+    delay(3000);
+    if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
+      values.clearMemory = 1;
+      ledRed.off();
+      ledBlue.off();
+      ledGreen.off();
+      checkBLE();
+    } 
   } else {
     // Ignore if button is pressed less than a second
     state = LIGHT_SLEEP;

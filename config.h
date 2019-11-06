@@ -41,10 +41,10 @@
 #define AQ_FREQ_ADDR_HI				21
 
 // Storage size in RAM
-#define CO2_ARRAY_SIZE		3
-#define VOC_ARRAY_SIZE		3
-#define TEMP_ARRAY_SIZE		3
-#define UVI_ARRAY_SIZE		3
+#define CO2_ARRAY_SIZE		120
+#define VOC_ARRAY_SIZE		120
+#define TEMP_ARRAY_SIZE		120
+#define UVI_ARRAY_SIZE		120
 
 // Storage size in Flash in Bytes
 #define CO2_STORAGE_SIZE		2000	// Possible to store measurements every 5 sec for 24 h ( = 17280). CO2 needs 2 Byte
@@ -96,9 +96,9 @@
 
 // Frequencies
 #define PEDO_FREQ				50	// in ms.
-#define AQ_FREQ					3 	// in sec.
-#define UV_FREQ					3	// in sec.
-#define SHOW_FREQ				3	// in sec.
+#define AQ_FREQ					60 	// in sec.
+#define UV_FREQ					60	// in sec.
+#define SHOW_FREQ				60	// in sec.
 
 // Pedometer
 
