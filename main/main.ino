@@ -1,5 +1,5 @@
 /*
-  Main class for the Vitameter Basel
+  Main class for the Vitameter Basel on the old prototype version
 */
 
 #include <Wire.h>
@@ -45,13 +45,10 @@ bool ignoreWarning = 0;
 // Button related
 volatile bool checkBT = 0;
 volatile bool checkPW = 0;
-volatile bool checkWA = 0;
 volatile uint32_t pwDebounceTimer = 0;
 volatile uint32_t btDebounceTimer = 0;
-volatile uint32_t waDebounceTimer = 0;
 volatile uint32_t btButtonPressed = 0;
 volatile uint32_t pwButtonPressed = 0;
-volatile uint32_t waButtonPressed = 0;
 
 // other timers
 uint32_t wakeUpTime = 0;
@@ -85,11 +82,8 @@ void setup() {
   // Buttons init
   pinMode(POWER_PIN, INPUT);
   pinMode(BLUETOOTH_PIN, INPUT);
-  pinMode(WARNING_PIN, INPUT);
 
   // ADC init
-  pinMode(X_PIN, INPUT);
-  pinMode(Y_PIN, INPUT);
   pinMode(Z_PIN, INPUT);
   
   // Thresholds for sensor values init
@@ -97,6 +91,13 @@ void setup() {
   pedo.calibrate();
   values.pedoEnable = 1;
   ble.init("Vitameter low energy");
+  /*
+  uint32_t timer = millis();
+  while (millis() - timer < 3000) {
+    Serial.println(digitalRead(POWER_PIN));
+    Serial.println(digitalRead(BLUETOOTH_PIN));
+  }
+  */
 }
 
 
@@ -104,7 +105,7 @@ void setup() {
 
 void loop() {
   ms = millis();
-  if (checkBT || checkPW || checkWA) {
+  if (checkBT || checkPW) {
     checkButtonState();
   }
   if (values.dataWanted_all) {
@@ -144,14 +145,14 @@ void sendDataOverUart(void) {
   ble.write("Print data over Serial Port...\n");
   Serial.println(values.prepareAllData().c_str());
 
-  /*// TODO for testing reasons
+  // TODO for testing reasons
   Serial.print("co2 flash ");
   Serial.println(values.getCurrentCO2FlashIdx());
   Serial.print("voc flash ");
   Serial.println(values.getCurrentVOCFlashIdx());
   Serial.print("uv flash ");
   Serial.println(values.getCurrentUVIFlashIdx());
-  */
+  
   
   delay(5000); 
   ledBlue.off();  
@@ -263,7 +264,6 @@ void goLightSleep() {
   Serial.println("\nEnter sleep\n");
   detachInterrupt(digitalPinToInterrupt(POWER_PIN));
   detachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN));
-  detachInterrupt(digitalPinToInterrupt(WARNING_PIN));
   delay(2000);
   values.clearAllWarnings();
   vib.off();
@@ -272,8 +272,7 @@ void goLightSleep() {
   ledBlue.off();
   sensors.off();
   gpio_wakeup_enable(GPIO_NUM_36, GPIO_INTR_LOW_LEVEL);
-  gpio_wakeup_enable(GPIO_NUM_39, GPIO_INTR_LOW_LEVEL);
-  gpio_wakeup_enable(GPIO_NUM_23, GPIO_INTR_LOW_LEVEL);
+  gpio_wakeup_enable(GPIO_NUM_34, GPIO_INTR_LOW_LEVEL);
   esp_sleep_enable_gpio_wakeup();
   esp_light_sleep_start();
   wakeUp();
@@ -393,7 +392,8 @@ void showThresholds(void) {
 void wakeUp() {
   // If button still pressed after 1 second
   delay(800);
-  if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
+  if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) { // TODO change back!!
+  // if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
     ble.write("\n WAKING UP");
     Serial.println("WAKING UP!");
     state = SENSORS_ACTIVE;
@@ -404,13 +404,13 @@ void wakeUp() {
     wakeUpTime = millis();
     setTimeouts();
   } else if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) {
-    // To clear memory: fist press BT. Then press WA for at least 3 sec.
-    if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+    // To clear memory: fist press BT. Then press PW for at least 3 sec.
+    if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
       ledBlue.on();
       ledRed.on();
       ledGreen.on();
       delay(3000);
-      if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
+      if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
         values.clearMemory = 1;
         ledRed.off();
         ledBlue.off();
@@ -425,13 +425,6 @@ void wakeUp() {
     } else {
       sendDataOverUart();
     }
-  } else if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
-    ledRed.on();
-    delay(300);
-    ledRed.off();
-    showMemoryStatus();
-    state = LIGHT_SLEEP;
-    return;
   } else {
     // Ignore if button is pressed less than a second
     state = LIGHT_SLEEP;
@@ -440,7 +433,6 @@ void wakeUp() {
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_GPIO);
   attachInterrupt(digitalPinToInterrupt(POWER_PIN), pwButtonISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN), btButtonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(WARNING_PIN), waButtonISR, FALLING);
   ble.write("Good morning!\n");
 }
 
@@ -460,6 +452,21 @@ void checkButtonState(void) {
     } else if (ms > btButtonPressed + 500) {
       if (digitalRead(BLUETOOTH_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkBT = 0;
+        showMemoryStatus(); // TODO delete
+        ledRed.on();
+        if (!ignoreWarning && values.warning) {
+          vib.off();
+          ignoreWarning = 1;
+          dismissWarning();
+          ble.write("Warnings deactivated\n");
+          Serial.println("Warnings deactivated");
+          
+        } else if (ignoreWarning) {
+          ignoreWarning = 0;
+          ble.write("Warnings activated\n");
+          Serial.println("Warnings activated");
+        }
+        ledRed.off();
       }
     }
   }
@@ -482,41 +489,13 @@ void checkButtonState(void) {
     } else if (ms > pwButtonPressed + 500) {
       if (digitalRead(POWER_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkPW = 0;
-        ble.write("Still alive!\n");
-      }
-    }
-  }
-  
-  // Check Warning Button
-  if (checkWA) {
-    if (ms > waButtonPressed + 1200) {
-      checkWA = 0;
-      if (digitalRead(WARNING_PIN) == PRESSED_BUTTON_LEVEL) {
         ledRed.on();
-        if (!ignoreWarning && values.warning) {
-          vib.off();
-          ignoreWarning = 1;
-          dismissWarning();
-          ble.write("Warnings deactivated\n");
-          Serial.println("Warnings deactivated");
-          
-        } else if (ignoreWarning) {
-          ignoreWarning = 0;
-          ble.write("Warnings activated\n");
-          Serial.println("Warnings activated");
-        }
-        ledRed.off();
-      }    
-    } else if (ms > waButtonPressed + 500) {
-      if (digitalRead(WARNING_PIN) == !PRESSED_BUTTON_LEVEL) {
-        ledRed.on();
-        checkWA = 0;
         showMemoryStatus();
         delay(1000);
         ledRed.off();
       }
     }
-  }  
+  }
 }
 
 void pwButtonISR() {
@@ -538,14 +517,6 @@ void btButtonISR() {
   }
 }
 
-void waButtonISR() {
-  ms = millis();
-  if (waDebounceTimer < ms) {
-    waDebounceTimer = ms + 100;
-    waButtonPressed = ms;
-    checkWA = 1;
-  }
-}
 
 void checkBLE() {
   if (values.clearMemory) {

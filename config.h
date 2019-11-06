@@ -41,10 +41,10 @@
 #define AQ_FREQ_ADDR_HI				21
 
 // Storage size in RAM
-#define CO2_ARRAY_SIZE		120
-#define VOC_ARRAY_SIZE		120
-#define TEMP_ARRAY_SIZE		120
-#define UVI_ARRAY_SIZE		120
+#define CO2_ARRAY_SIZE		3
+#define VOC_ARRAY_SIZE		3
+#define TEMP_ARRAY_SIZE		3
+#define UVI_ARRAY_SIZE		3
 
 // Storage size in Flash in Bytes
 #define CO2_STORAGE_SIZE		2000	// Possible to store measurements every 5 sec for 24 h ( = 17280). CO2 needs 2 Byte
@@ -74,18 +74,18 @@
 #define SKIN_TYPE_5				60	// actually >60
 
 
-// Version Basel //Pins as in WCS_Version10
-#define	VIBRATION_PIN			27 // 35
+// Pins as in WCS_Version10
+#define	VIBRATION_PIN			35
 
 // LED pins
-#define LEDBLUE_PIN				16 //23 // Bluetooth
-#define	LEDGREEN_PIN			2 // 16 // Power
-#define LEDRED_PIN				15 // 15// Warning
+#define LEDBLUE_PIN				23 // Bluetooth
+#define	LEDGREEN_PIN			16 // Power
+#define LEDRED_PIN				15// Warning
 
 // Button pins
 #define POWER_PIN				36
-#define BLUETOOTH_PIN			39// 34
-#define WARNING_PIN				23
+#define BLUETOOTH_PIN			34
+
 #define PRESSED_BUTTON_LEVEL	0
 
 #define SENSORS_EN_PIN			13
@@ -96,14 +96,13 @@
 
 // Frequencies
 #define PEDO_FREQ				50	// in ms.
-#define AQ_FREQ					60 	// in sec.
-#define UV_FREQ					60	// in sec.
-#define SHOW_FREQ				60	// in sec.
+#define AQ_FREQ					3 	// in sec.
+#define UV_FREQ					3	// in sec.
+#define SHOW_FREQ				3	// in sec.
 
 // Pedometer
-#define X_PIN 							33
-#define Y_PIN 							32
-#define Z_PIN 							35
+
+#define Z_PIN 							32
 #define PEDO_CALIBRATION_SAMPLE_SIZE 	15
 #define PEDO_SAMPLE_SIZE 				15
 #define ACCL							60000
