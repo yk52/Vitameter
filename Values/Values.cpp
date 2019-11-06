@@ -886,13 +886,13 @@ std::string Values::prepareStepData() {
 			return "setStepGoal";
 		} else if (parameter.compare("setShowFreq") == 0) {
 			setShowFreq(value);
-			return "setStepGoal";
+			return "setShowFreq";
 		} else if (parameter.compare("setUVFreq") == 0) {
 			setUVFreq(value);
 			return "setUvFreq";
 		} else if (parameter.compare("setAQFreq") == 0) {
 			setAQFreq(value);
-			return "setStepGoal";
+			return "setAqFreq";
 		} else if (parameter.compare("setSunscreenFactor") == 0) {
 			// Todo: setSunsreenFactor(value);
 			return "todo: setSunscreenFactor";
