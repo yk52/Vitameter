@@ -311,7 +311,6 @@ uint16_t Values::getCurrentUVIFlashIdx(void) {
 
 
 
-// ...and most recent values TODO: necessary?
 uint16_t Values::getLastCO2(void) {
 	return co2[co2_idx-1];
 }
@@ -400,9 +399,11 @@ void Values::setUVIDurationThresh(uint8_t val) {
 
 bool Values::storeCO2(uint16_t val) {
 	bool arrayFull = 0;
-	co2[co2_idx++] = val;
+
 	if (co2_idx == CO2_ARRAY_SIZE) {
 		arrayFull = 1;
+	} else {
+		co2[co2_idx++] = val;
 	}
 	if (val >= co2Thresh) {
 		setCO2Flag();
@@ -421,9 +422,11 @@ bool Values::storeVOC(uint16_t val) {
 	} else {
 		vocVal = (uint8_t) val;
 	}
-	voc[voc_idx++] = vocVal;
+
 	if (voc_idx == VOC_ARRAY_SIZE) {
 		arrayFull = 1;
+	} else {
+		voc[voc_idx++] = vocVal;
 	}
 	if (val >= vocThresh) {
 		setVOCFlag();
@@ -465,10 +468,11 @@ void Values::resetSteps(void) {
 
 
 bool Values::storeUVI(uint8_t val) {
-	uvi[uvi_idx++] = val;
 	bool arrayFull = 0;
 	if (uvi_idx == UVI_ARRAY_SIZE) {
 		arrayFull = 1;
+	} else {
+		uvi[uvi_idx++] = val;
 	}
 	if (val >= uviThresh) {
 		uviDuration++;
@@ -519,64 +523,56 @@ bool Values::storeRAMToFlash(void) {
     EEPROM.write(STEPS_FLASH_ADDR_HI, stepHi);
 
     // Store Data from CCS811: CO2, TVOC and Temperature
-    uint16_t idx = getCurrentCO2FlashIdx();
-    uint32_t co2Flash_idx = idx + CO2_FLASH_IDX_START;
+    uint16_t co2Flash_idx = getCurrentCO2FlashIdx();
     // uint16_t tempFlash_idx = getCurrentTempFlashIdx();
 
     for (int i = 0; i < co2_idx; i++) {
-    	if (idx >= CO2_STORAGE_SIZE) {
+    	if (co2Flash_idx >= CO2_FLASH_IDX_STOP) {
     		overflow = 1;
     		break;
     	}
     	else {
-    	    // Store CO2. First store Hi, then Lo. (e.g. Flash[0] = Hi, Flash[1] = Lo)
-    	    uint8_t CO2Lo = co2[i] & 0xFF;
-    	    uint8_t CO2Hi = (co2[i] >> 8) & 0xFF;
-    		EEPROM.write(co2Flash_idx++, CO2Hi);
-    		EEPROM.write(co2Flash_idx++, CO2Lo);
-    		idx += 2;
+			// Store CO2. First store Hi, then Lo. (e.g. Flash[0] = Hi, Flash[1] = Lo)
+			uint8_t CO2Lo = co2[i] & 0xFF;
+			uint8_t CO2Hi = (co2[i] >> 8) & 0xFF;
+			EEPROM.write((co2Flash_idx++)  + CO2_FLASH_IDX_START, CO2Hi);
+			EEPROM.write((co2Flash_idx++)  + CO2_FLASH_IDX_START, CO2Lo);
     	}
     }
-	setCurrentCO2FlashIdx(idx);
+    setCurrentCO2FlashIdx(co2Flash_idx);
 
-	idx = getCurrentVOCFlashIdx();
-    uint32_t vocFlash_idx = idx + VOC_FLASH_IDX_START;
+    uint16_t vocFlash_idx = getCurrentVOCFlashIdx();
     for (int i = 0; i < voc_idx; i++) {
-    	if (idx >= VOC_STORAGE_SIZE) {
+    	if (vocFlash_idx >= VOC_FLASH_IDX_STOP) {
     		overflow = 1;
     		break;
     	}
     	else {
-    		// Store the rest
-    		// EEPROM.write(tempFlash_idx++, temp[i]);
-    		EEPROM.write(vocFlash_idx++, voc[i]);
-    		idx++;
+    		EEPROM.write(VOC_FLASH_IDX_START + (vocFlash_idx++), voc[i]);
+
     	}
     }
-	setCurrentVOCFlashIdx(idx);
-	// setCurrentTempFlashIdx(tempFlash_idx);
+    setCurrentVOCFlashIdx(vocFlash_idx);
 
 
     // Store UV
-	idx = getCurrentUVIFlashIdx();
-    uint32_t uviFlash_idx = idx + UVI_FLASH_IDX_START;
+    uint16_t uviFlash_idx = getCurrentUVIFlashIdx();
     for (int i = 0; i < uvi_idx; i++) {
-    	if (idx >= UVI_STORAGE_SIZE) {
+    	if (uviFlash_idx >= UVI_FLASH_IDX_STOP) {
     		overflow = 1;
     		break;
     	}
     	else {
-    		EEPROM.write(uviFlash_idx++, uvi[i]);
-    		idx++;
+    		EEPROM.write((uviFlash_idx++) + UVI_FLASH_IDX_START, uvi[i]);
     	}
     }
-	setCurrentUVIFlashIdx(idx);
+	setCurrentUVIFlashIdx(uviFlash_idx);
 
     co2_idx = 0;
     voc_idx = 0;
     uvi_idx = 0;
     temp_idx = 0;
-    steps = 0;
+
     EEPROM.commit();
 
     if (overflow) {

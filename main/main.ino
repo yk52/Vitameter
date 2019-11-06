@@ -143,14 +143,16 @@ void sendDataOverUart(void) {
 
   ble.write("Print data over Serial Port...\n");
   Serial.println(values.prepareAllData().c_str());
-  Serial.print("Co2 flash idx ");
-  Serial.println(values.getCurrentCO2FlashIdx());
-  
-  Serial.print("voc flash idx ");
-  Serial.println(values.getCurrentVOCFlashIdx());
 
-  Serial.print("UVI flash idx ");
+  /*// TODO for testing reasons
+  Serial.print("co2 flash ");
+  Serial.println(values.getCurrentCO2FlashIdx());
+  Serial.print("voc flash ");
+  Serial.println(values.getCurrentVOCFlashIdx());
+  Serial.print("uv flash ");
   Serial.println(values.getCurrentUVIFlashIdx());
+  */
+  
   delay(5000); 
   ledBlue.off();  
 }
@@ -199,7 +201,6 @@ void takeMeasurements(void) {
     uint16_t v = ccs.getTVOC();
     values.storeVOC(v);
     arrayFull = values.storeCO2(c);
-    // values.storeTemp(ccs.calculateTemperature());
   }
   if (arrayFull) {
     bool memFull = values.storeRAMToFlash();
@@ -212,9 +213,13 @@ void takeMeasurements(void) {
 
 void showMeasurements(void) {
 #ifdef SHOW_BLE
+    uint8_t measNr = values.uvi_idx;
+    if (measNr == 0) {
+      return;
+    }
     msg = "";
-    msg = "Measurement number: ";
-    msg += values.getUint8AsString(values.uvi_idx);
+    msg = "Measurement Nr: ";
+    msg += values.getUint8AsString(measNr);
     msg += "\n";
     ble.write(msg);
     Serial.print(msg.c_str());
@@ -239,13 +244,7 @@ void showMeasurements(void) {
     msg += "\n";
     ble.write(msg);
     Serial.print(msg.c_str());
-    /*
-    msg = "Temp: ";
-    msg += values.getUint8AsString(values.getLastTemp());
-    msg += "\n";
-    ble.write(msg);
-    Serial.print(msg.c_str());
-    */
+
     if (values.warning) {
       ble.write("Thresholds exceeded. Check your values\n");
       Serial.print("Thresholds exceeded. Check your values\n");
@@ -328,10 +327,6 @@ void showMemoryStatus(void) {
   msg += " ms\n";
   Serial.println(msg.c_str());
   ble.write(msg);
-  msg = "UV Index: Every ";
-  msg += values.getUint16AsString(values.uvFreq);
-  msg += " ms\n";
-  ble.write(msg);
   ble.write("\n\n");  
   ble.write("***Flash Memory: \n");
   ble.write("Air Quality Data: ");
@@ -340,13 +335,13 @@ void showMemoryStatus(void) {
   Serial.print("Air Quality Data: ");
   uint16_t currIdx = values.getCurrentVOCFlashIdx();
   ble.write(values.getUint16AsString(currIdx));
-  ble.write("/18000\n");
+  ble.write("/1000\n");
   ble.write("UVI Data: ");
   Serial.print(values.getUint16AsString(currIdx).c_str());
-  Serial.println("/18000");
+  Serial.println("/1000");
   currIdx = values.getCurrentUVIFlashIdx();
   ble.write(values.getUint16AsString(currIdx));
-  ble.write("/18000\n");
+  ble.write("/1000\n");
   ble.write("\n\n");
   ble.write("\n***Dynamic Memory: \n");
   ble.write("Air Quality Data: ");
@@ -357,7 +352,7 @@ void showMemoryStatus(void) {
   ble.write("/200\n\n\n");
   Serial.print("UVI Data: ");
   Serial.print(values.getUint16AsString(currIdx).c_str());
-  Serial.println("/18000");
+  Serial.println("/1000");
   Serial.println("\n");
   Serial.println("\n***Dynamic Memory:");
   Serial.print("Air Quality Data: ");

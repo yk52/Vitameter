@@ -67,13 +67,13 @@ class Values {
 		bool getCO2Flag(void);
 
 		// Ram Storage arrays
-		uint16_t co2[10] = {0};  // in ppm. in flash memory, its divided by 100 to fit in a byte
+		uint16_t co2[120] = {0};  // in ppm. in flash memory, its divided by 100 to fit in a byte
 		uint16_t co2_idx;
-		uint8_t voc[10] = {0}; // in ppb, bzw. mg/m3
+		uint8_t voc[120] = {0}; // in ppb, bzw. mg/m3
 		uint16_t voc_idx;
-		uint8_t uvi[10] = {0};   // UV index
+		uint8_t uvi[120] = {0};   // UV index
 		uint16_t uvi_idx;
-		float temp[10] = {0}; // in degrees
+		float temp[120] = {0}; // in degrees
 		uint16_t temp_idx;
 		uint16_t steps;
 
