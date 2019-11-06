@@ -392,8 +392,8 @@ void showThresholds(void) {
 void wakeUp() {
   // If button still pressed after 1 second
   delay(800);
-  if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) { // TODO change back!!
-  // if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
+  // if (digitalRead(BLUETOOTH_PIN) == PRESSED_BUTTON_LEVEL) { // TODO use this if PW does not work
+  if (digitalRead(POWER_PIN) == PRESSED_BUTTON_LEVEL) {
     ble.write("\n WAKING UP");
     Serial.println("WAKING UP!");
     state = SENSORS_ACTIVE;
@@ -452,7 +452,6 @@ void checkButtonState(void) {
     } else if (ms > btButtonPressed + 500) {
       if (digitalRead(BLUETOOTH_PIN) == !PRESSED_BUTTON_LEVEL) {
         checkBT = 0;
-        showMemoryStatus(); // TODO delete
         ledRed.on();
         if (!ignoreWarning && values.warning) {
           vib.off();
