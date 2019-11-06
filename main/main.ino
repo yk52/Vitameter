@@ -90,7 +90,7 @@ void setup() {
   values.init();
   pedo.calibrate();
   values.pedoEnable = 1;
-  ble.init("Vitameter low energy");
+  ble.init("Vitameter low energy B");
   /*
   uint32_t timer = millis();
   while (millis() - timer < 3000) {
@@ -146,14 +146,13 @@ void sendDataOverUart(void) {
   Serial.println(values.prepareAllData().c_str());
 
   // TODO for testing reasons
-  Serial.print("co2 flash ");
-  Serial.println(values.getCurrentCO2FlashIdx());
-  Serial.print("voc flash ");
-  Serial.println(values.getCurrentVOCFlashIdx());
-  Serial.print("uv flash ");
-  Serial.println(values.getCurrentUVIFlashIdx());
-  
-  
+  Serial.print("co2 data points: ");
+  Serial.println(values.getCurrentCO2FlashIdx() + values.co2_idx);
+  Serial.print("voc data points: ");
+  Serial.println(values.getCurrentVOCFlashIdx() + values.voc_idx);
+  Serial.print("uvi data points: ");
+  Serial.println(values.getCurrentUVIFlashIdx() + values.uvi_idx);
+ 
   delay(5000); 
   ledBlue.off();  
 }
