@@ -315,18 +315,18 @@ void showMemoryStatus(void) {
   Serial.println("***Measurement Frequencies:");
   
   msg = "Air Quality: Every ";
-  msg += values.getUint16AsString(values.aqFreq);
-  msg += " ms\n";
+  msg += values.getUint16AsString(values.aqFreq / 1000);
+  msg += " s\n";
   Serial.println(msg.c_str());
   ble.write(msg);
   msg = "UV Index: Every ";
-  msg += values.getUint16AsString(values.uvFreq);
-  msg += " ms\n";
+  msg += values.getUint16AsString(values.uvFreq / 1000);
+  msg += " s\n";
   ble.write(msg);
   Serial.println(msg.c_str());  
   msg = "Show Measurement: Every ";
-  msg += values.getUint16AsString(values.showFreq);
-  msg += " ms\n";
+  msg += values.getUint16AsString(values.showFreq / 1000);
+  msg += " s\n";
   Serial.println(msg.c_str());
   ble.write(msg);
   ble.write("\n\n");  
