@@ -117,7 +117,7 @@ void Values::setShowFreq(uint16_t val) {
 
 void Values::setAQFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
-	aqFreq = val*1000;
+	aqFreq = val;
 	uint8_t LO = aqFreq & 0xFF;
 	uint8_t HI = (aqFreq >> 8) & 0xFF;
 	EEPROM.write(AQ_FREQ_ADDR_LO, LO);
@@ -126,7 +126,7 @@ void Values::setAQFreq(uint16_t val) {
 
 void Values::setUVFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
-	uvFreq = val*1000;
+	uvFreq = val;
 	uint8_t LO = uvFreq & 0xFF;
 	uint8_t HI = (uvFreq >> 8) & 0xFF;
 	EEPROM.write(UV_FREQ_ADDR_LO, LO);
@@ -142,14 +142,14 @@ uint16_t Values::getAQFreq(void) {
 	uint8_t LO = EEPROM.read(AQ_FREQ_ADDR_LO);
 	uint16_t HI = EEPROM.read(AQ_FREQ_ADDR_HI);
 	uint16_t freq = (HI << 8) | LO;
-	return freq;
+	return freq * 1000;
 }
 
 uint16_t Values::getUVFreq(void) {
 	uint8_t LO = EEPROM.read(UV_FREQ_ADDR_LO);
 	uint16_t HI = EEPROM.read(UV_FREQ_ADDR_HI);
 	uint16_t freq = (HI << 8) | LO;
-	return freq;
+	return freq * 1000;
 }
 
 void Values::setUVIFlag(void) {
