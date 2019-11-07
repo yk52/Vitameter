@@ -97,7 +97,7 @@ void setup() {
   values.init();
   pedo.calibrate();
   values.pedoEnable = 1;
-  ble.init("Vitameter low energy C");
+  ble.init("Vitameter low energy A");
   // 16 = A, 15 = B, 3 = C
 }
 
