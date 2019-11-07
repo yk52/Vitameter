@@ -106,13 +106,19 @@ void Values::init(void) {
 		stepGoal = getStepGoal();
 		uvFreq = getUVFreq();
 		aqFreq = getAQFreq();
-		showFreq = 60000;
+		showFreq = getShowFreq();
 	}
 }
 
 void Values::setShowFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
+	showFreq = val;
+	uint8_t LO = showFreq & 0xFF;
+	uint8_t HI = (showFreq >> 8) & 0xFF;
+	EEPROM.write(SHOW_FREQ_ADDR_LO, LO);
+	EEPROM.write(SHOW_FREQ_ADDR_HI, HI);
 	showFreq = val * 1000;
+	EEPROM.commit();
 }
 
 void Values::setAQFreq(uint16_t val) {
@@ -123,6 +129,7 @@ void Values::setAQFreq(uint16_t val) {
 	EEPROM.write(AQ_FREQ_ADDR_LO, LO);
 	EEPROM.write(AQ_FREQ_ADDR_HI, HI);
 	aqFreq = val * 1000;
+	EEPROM.commit();
 }
 
 void Values::setUVFreq(uint16_t val) {
@@ -133,10 +140,14 @@ void Values::setUVFreq(uint16_t val) {
 	EEPROM.write(UV_FREQ_ADDR_LO, LO);
 	EEPROM.write(UV_FREQ_ADDR_HI, HI);
 	uvFreq = val * 1000;
+	EEPROM.commit();
 }
 
 uint32_t Values::getShowFreq(void) {
-	return showFreq;
+	uint8_t LO = EEPROM.read(SHOW_FREQ_ADDR_LO);
+	uint16_t HI = EEPROM.read(SHOW_FREQ_ADDR_HI);
+	uint16_t freq = (HI << 8) | LO;
+	return freq * 1000;
 }
 
 
