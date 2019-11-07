@@ -40,6 +40,7 @@ InterfaceOut sensors(SENSORS_EN_PIN);
 
 bool firstBoot = 1;
 bool ignoreWarning = 0;
+bool memFull = 0;
 
 
 // Button related
@@ -116,7 +117,7 @@ void loop() {
   // Light sleep mode if Vitameter is turned off_____________________
   if (state == LIGHT_SLEEP) {
     if (values.uvi_idx >= 1) {
-      bool memFull = values.storeRAMToFlash();
+      memFull = values.storeRAMToFlash();
       if (memFull) {
         ble.write("Memory capacity exceeded. Data overflow.\n");
         Serial.print("Memory capacity exceeded. Data overflow.\n");
@@ -203,10 +204,14 @@ void takeMeasurements(void) {
     arrayFull = values.storeCO2(c);
   }
   if (arrayFull) {
-    bool memFull = values.storeRAMToFlash();
+    memFull = values.storeRAMToFlash();
     if (memFull) {
       ble.write("Memory capacity exceeded. Data overflow.\n");
       Serial.print("Memory capacity exceeded. Data overflow.\n");
+      ledRed.on();
+      delay(250);
+      ledRed.off();
+      delay(250);
     }
   }
 }
