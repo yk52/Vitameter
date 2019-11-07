@@ -71,12 +71,13 @@ void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
 
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
+
 	if (thresholdsSet != 1) {
 		// Values initiated flag
 		EEPROM.write(VALUES_SET_ADDR, 1);
 		// Set thresholds
-		EEPROM.write(CO2_THRESH_ADDR, 14); // 14 (*100) = 1400
-		co2Thresh = 1400;
+		EEPROM.write(CO2_THRESH_ADDR, 13); // 13 (*100) = 1300
+		co2Thresh = 1300;
 		EEPROM.write(VOC_THRESH_ADDR, 50);
 		vocThresh = 50;
 		EEPROM.write(UVI_THRESH_ADDR, 8);
@@ -105,11 +106,7 @@ void Values::init(void) {
 		stepGoal = getStepGoal();
 		uvFreq = getUVFreq();
 		aqFreq = getAQFreq();
-		showFreq = showFreq = SHOW_FREQ * 1000;
-
-		// For now TODO. delete later
-		uvFreq = UV_FREQ*1000;
-		aqFreq = AQ_FREQ*1000;
+		showFreq = SHOW_FREQ * 1000;
 	}
 }
 
