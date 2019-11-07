@@ -153,7 +153,7 @@ void sendDataOverUart(void) {
   Serial.println(values.getCurrentVOCFlashIdx() + values.voc_idx);
   Serial.print("uvi data points: ");
   Serial.println(values.getCurrentUVIFlashIdx() + values.uvi_idx);
-  delay(5000); 
+  delay(3000); 
   ledBlue.off();
 }
 
@@ -183,7 +183,7 @@ void takeMeasurements(void) {
     if (vibCounter > 2) {
       ble.write("Step goal achieved\n");
       goalVib = 0;
-      vibCounter= 0;
+      vibCounter = 0;
       vib.off();
     }
   }
@@ -284,9 +284,9 @@ void goLightSleep() {
 void setTimeouts() {
   ms = millis();
   pedoTimeout = PEDO_FREQ + ms;
-  uvTimeout = values.uvFreq + ms;
-  airTimeout = values.aqFreq + ms;
-  showTimeout = ms + values.showFreq;
+  uvTimeout = values.getUVFreq() + ms;
+  airTimeout = values.getAQFreq() + ms;
+  showTimeout = ms + values.getShowFreq();
 }
 
 void showMemoryStatus(void) {

@@ -71,7 +71,7 @@ void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
 
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
-	thresholdsSet = 0;
+
 	if (thresholdsSet != 1) {
 		// Values initiated flag
 		EEPROM.write(VALUES_SET_ADDR, 1);
