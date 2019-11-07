@@ -118,6 +118,7 @@ void Values::setShowFreq(uint16_t val) {
 	EEPROM.write(SHOW_FREQ_ADDR_LO, LO);
 	EEPROM.write(SHOW_FREQ_ADDR_HI, HI);
 	showFreq = val * 1000;
+	EEPROM.commit();
 }
 
 void Values::setAQFreq(uint16_t val) {
@@ -128,6 +129,7 @@ void Values::setAQFreq(uint16_t val) {
 	EEPROM.write(AQ_FREQ_ADDR_LO, LO);
 	EEPROM.write(AQ_FREQ_ADDR_HI, HI);
 	aqFreq = val * 1000;
+	EEPROM.commit();
 }
 
 void Values::setUVFreq(uint16_t val) {
@@ -138,6 +140,7 @@ void Values::setUVFreq(uint16_t val) {
 	EEPROM.write(UV_FREQ_ADDR_LO, LO);
 	EEPROM.write(UV_FREQ_ADDR_HI, HI);
 	uvFreq = val * 1000;
+	EEPROM.commit();
 }
 
 uint32_t Values::getShowFreq(void) {
