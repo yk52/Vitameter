@@ -87,9 +87,9 @@ class Values {
 		void setUVFreq(uint16_t val);
 
 		// ... and get them
-		uint16_t getAQFreq(void);
-		uint16_t getUVFreq(void);
-		uint16_t getShowFreq(void);
+		uint32_t getAQFreq(void);
+		uint32_t getUVFreq(void);
+		uint32_t getShowFreq(void);
 
 		// Set Threshold values
 		void setCO2Thresh(uint16_t val);

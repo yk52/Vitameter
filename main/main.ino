@@ -111,6 +111,7 @@ void loop() {
   }
   if (values.dataWanted_all) {
     sendDataOverUart();
+    values.dataWanted_all = 0;
   }
   checkBLE();
 
@@ -152,7 +153,6 @@ void sendDataOverUart(void) {
   Serial.println(values.getCurrentVOCFlashIdx() + values.voc_idx);
   Serial.print("uvi data points: ");
   Serial.println(values.getCurrentUVIFlashIdx() + values.uvi_idx);
-  
   delay(5000); 
   ledBlue.off();  
 }
@@ -317,18 +317,18 @@ void showMemoryStatus(void) {
   Serial.println("***Measurement Frequencies:");
   
   msg = "Air Quality: Every ";
-  msg += values.getUint16AsString(values.aqFreq);
-  msg += " ms\n";
+  msg += values.getUint16AsString(values.aqFreq / 1000);
+  msg += " s\n";
   Serial.println(msg.c_str());
   ble.write(msg);
   msg = "UV Index: Every ";
-  msg += values.getUint16AsString(values.uvFreq);
-  msg += " ms\n";
+  msg += values.getUint16AsString(values.uvFreq / 1000);
+  msg += " s\n";
   ble.write(msg);
   Serial.println(msg.c_str());  
   msg = "Show Measurement: Every ";
-  msg += values.getUint16AsString(values.showFreq);
-  msg += " ms\n";
+  msg += values.getUint16AsString(values.showFreq / 1000);
+  msg += " s\n";
   Serial.println(msg.c_str());
   ble.write(msg);
   ble.write("\n\n");  
@@ -583,7 +583,6 @@ void checkBLE() {
     values.dataWanted_steps = 0;
   } else {
     sent = ble.getMessage();
-    processed = values.processMessage(sent);
 
     if (sent != oldSent) {
       /*
@@ -599,6 +598,7 @@ void checkBLE() {
       Serial.println("");
       */
       oldSent = sent;
+      processed = values.processMessage(sent);
       ble.write(processed);
     }
   }  

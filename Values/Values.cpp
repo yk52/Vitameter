@@ -35,7 +35,7 @@ bool pedoEnable = 0;
 
 uint32_t aqFreq = 0;
 uint32_t uvFreq = 0;
-uint32_t showFreq = 0;
+uint32_t showFreq = 60000;
 
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
@@ -106,13 +106,13 @@ void Values::init(void) {
 		stepGoal = getStepGoal();
 		uvFreq = getUVFreq();
 		aqFreq = getAQFreq();
-		showFreq = SHOW_FREQ * 1000;
+		showFreq = 60000;
 	}
 }
 
 void Values::setShowFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
-	showFreq = val*1000;
+	showFreq = val * 1000;
 }
 
 void Values::setAQFreq(uint16_t val) {
@@ -122,6 +122,7 @@ void Values::setAQFreq(uint16_t val) {
 	uint8_t HI = (aqFreq >> 8) & 0xFF;
 	EEPROM.write(AQ_FREQ_ADDR_LO, LO);
 	EEPROM.write(AQ_FREQ_ADDR_HI, HI);
+	aqFreq = val * 1000;
 }
 
 void Values::setUVFreq(uint16_t val) {
@@ -131,21 +132,22 @@ void Values::setUVFreq(uint16_t val) {
 	uint8_t HI = (uvFreq >> 8) & 0xFF;
 	EEPROM.write(UV_FREQ_ADDR_LO, LO);
 	EEPROM.write(UV_FREQ_ADDR_HI, HI);
+	uvFreq = val * 1000;
 }
 
-uint16_t Values::getShowFreq(void) {
+uint32_t Values::getShowFreq(void) {
 	return showFreq;
 }
 
 
-uint16_t Values::getAQFreq(void) {
+uint32_t Values::getAQFreq(void) {
 	uint8_t LO = EEPROM.read(AQ_FREQ_ADDR_LO);
 	uint16_t HI = EEPROM.read(AQ_FREQ_ADDR_HI);
 	uint16_t freq = (HI << 8) | LO;
 	return freq * 1000;
 }
 
-uint16_t Values::getUVFreq(void) {
+uint32_t Values::getUVFreq(void) {
 	uint8_t LO = EEPROM.read(UV_FREQ_ADDR_LO);
 	uint16_t HI = EEPROM.read(UV_FREQ_ADDR_HI);
 	uint16_t freq = (HI << 8) | LO;
@@ -844,7 +846,7 @@ std::string Values::prepareStepData() {
 }
 
  std::string Values::processMessage(std::string rxValue) {
-	 if (rxValue.find("empty") != -1) {
+	 if (rxValue.find("eraseMemory") != -1) {
 		 clearMemory = true;
 		 return "clearMemory";
 
