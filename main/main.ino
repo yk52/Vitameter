@@ -349,10 +349,10 @@ void showMemoryStatus(void) {
   ble.write("\n***Dynamic Memory: \n");
   ble.write("Air Quality Data: ");
   ble.write(values.getUint16AsString((values.co2_idx)).c_str());
-  ble.write("/200\n");
+  ble.write("/120\n");
   ble.write("UVI Data: ");
   ble.write(values.getUint16AsString((values.uvi_idx)).c_str());
-  ble.write("/200\n\n\n");
+  ble.write("/120\n\n\n");
   Serial.print("UVI Data: ");
   Serial.print(values.getUint16AsString(currIdx).c_str());
   Serial.println("/1000");
@@ -360,10 +360,10 @@ void showMemoryStatus(void) {
   Serial.println("\n***Dynamic Memory:");
   Serial.print("Air Quality Data: ");
   Serial.print(values.getUint16AsString((values.co2_idx)).c_str());
-  Serial.println("/200");
+  Serial.println("/120");
   Serial.print("UVI Data: ");
   Serial.print(values.getUint16AsString((values.uvi_idx)).c_str());
-  Serial.println("/200\n\n");
+  Serial.println("/120\n\n");
   ble.write("***Thresholds: \n");
   Serial.println("***Thresholds: ");
   showThresholds();

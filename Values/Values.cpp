@@ -75,8 +75,8 @@ void Values::init(void) {
 		// Values initiated flag
 		EEPROM.write(VALUES_SET_ADDR, 1);
 		// Set thresholds
-		EEPROM.write(CO2_THRESH_ADDR, 14); // 14 (*100) = 1400
-		co2Thresh = 1400;
+		EEPROM.write(CO2_THRESH_ADDR, 13); // 13 (*100) = 1300
+		co2Thresh = 1300;
 		EEPROM.write(VOC_THRESH_ADDR, 50);
 		vocThresh = 50;
 		EEPROM.write(UVI_THRESH_ADDR, 8);
