@@ -35,7 +35,7 @@ bool pedoEnable = 0;
 
 uint32_t aqFreq = 0;
 uint32_t uvFreq = 0;
-uint32_t showFreq = 0;
+uint32_t showFreq = 60000;
 
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
@@ -71,6 +71,7 @@ void Values::init(void) {
 	EEPROM.begin(FLASH_SIZE);
 
 	uint8_t thresholdsSet = EEPROM.read(VALUES_SET_ADDR);
+	thresholdsSet = 0;
 	if (thresholdsSet != 1) {
 		// Values initiated flag
 		EEPROM.write(VALUES_SET_ADDR, 1);
@@ -105,54 +106,60 @@ void Values::init(void) {
 		stepGoal = getStepGoal();
 		uvFreq = getUVFreq();
 		aqFreq = getAQFreq();
-		showFreq = showFreq = SHOW_FREQ * 1000;
-
-		// For now TODO. delete later
-		uvFreq = UV_FREQ*1000;
-		aqFreq = AQ_FREQ*1000;
+		showFreq = getShowFreq();
 	}
 }
 
 void Values::setShowFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
-	showFreq = val*1000;
+	showFreq = val;
+	uint8_t LO = showFreq & 0xFF;
+	uint8_t HI = (showFreq >> 8) & 0xFF;
+	EEPROM.write(SHOW_FREQ_ADDR_LO, LO);
+	EEPROM.write(SHOW_FREQ_ADDR_HI, HI);
+	showFreq = val * 1000;
 }
 
 void Values::setAQFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
-	aqFreq = val*1000;
+	aqFreq = val;
 	uint8_t LO = aqFreq & 0xFF;
 	uint8_t HI = (aqFreq >> 8) & 0xFF;
 	EEPROM.write(AQ_FREQ_ADDR_LO, LO);
 	EEPROM.write(AQ_FREQ_ADDR_HI, HI);
+	aqFreq = val * 1000;
 }
 
 void Values::setUVFreq(uint16_t val) {
 	// val is in seconds. *1000 to get millis
-	uvFreq = val*1000;
+	uvFreq = val;
 	uint8_t LO = uvFreq & 0xFF;
 	uint8_t HI = (uvFreq >> 8) & 0xFF;
 	EEPROM.write(UV_FREQ_ADDR_LO, LO);
 	EEPROM.write(UV_FREQ_ADDR_HI, HI);
+	uvFreq = val * 1000;
 }
 
-uint16_t Values::getShowFreq(void) {
-	return showFreq;
+uint32_t Values::getShowFreq(void) {
+	uint8_t LO = EEPROM.read(SHOW_FREQ_ADDR_LO);
+	uint16_t HI = EEPROM.read(SHOW_FREQ_ADDR_HI);
+	uint16_t freq = (HI << 8) | LO;
+	return freq * 1000;
 }
 
 
-uint16_t Values::getAQFreq(void) {
+uint32_t Values::getAQFreq(void) {
 	uint8_t LO = EEPROM.read(AQ_FREQ_ADDR_LO);
 	uint16_t HI = EEPROM.read(AQ_FREQ_ADDR_HI);
 	uint16_t freq = (HI << 8) | LO;
-	return freq;
+	return freq * 1000;
 }
 
-uint16_t Values::getUVFreq(void) {
+uint32_t Values::getUVFreq(void) {
 	uint8_t LO = EEPROM.read(UV_FREQ_ADDR_LO);
 	uint16_t HI = EEPROM.read(UV_FREQ_ADDR_HI);
 	uint16_t freq = (HI << 8) | LO;
-	return freq;
+	return freq * 1000;
 }
 
 void Values::setUVIFlag(void) {
@@ -847,7 +854,7 @@ std::string Values::prepareStepData() {
 }
 
  std::string Values::processMessage(std::string rxValue) {
-	 if (rxValue.find("empty") != -1) {
+	 if (rxValue.find("eraseMemory") != -1) {
 		 clearMemory = true;
 		 return "clearMemory";
 

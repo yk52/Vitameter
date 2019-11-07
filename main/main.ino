@@ -153,8 +153,8 @@ void sendDataOverUart(void) {
   Serial.println(values.getCurrentVOCFlashIdx() + values.voc_idx);
   Serial.print("uvi data points: ");
   Serial.println(values.getCurrentUVIFlashIdx() + values.uvi_idx);
- 
   delay(5000); 
+  ledBlue.off();
 }
 
 void takeMeasurements(void) {
@@ -544,8 +544,7 @@ void checkBLE() {
     values.dataWanted_steps = 0;
   } else {
     sent = ble.getMessage();
-    processed = values.processMessage(sent);
-
+   
     if (sent != oldSent) {
       /*
       Serial.print("sent");
@@ -560,6 +559,7 @@ void checkBLE() {
       Serial.println("");
       */
       oldSent = sent;
+      processed = values.processMessage(sent);
       ble.write(processed);
     }
   }  

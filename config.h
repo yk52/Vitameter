@@ -39,6 +39,8 @@
 #define UV_FREQ_ADDR_HI				19
 #define AQ_FREQ_ADDR_LO				20
 #define AQ_FREQ_ADDR_HI				21
+#define SHOW_FREQ_ADDR_LO				22
+#define SHOW_FREQ_ADDR_HI				23
 
 // Storage size in RAM
 #define CO2_ARRAY_SIZE		120
