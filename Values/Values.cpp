@@ -35,7 +35,7 @@ bool pedoEnable = 0;
 
 uint32_t aqFreq = 0;
 uint32_t uvFreq = 0;
-uint32_t showFreq = 60000;
+uint32_t showFreq = 0;
 
 void Values::setFlashIndexToStart(void) {
 	// Set Flash storage indices
