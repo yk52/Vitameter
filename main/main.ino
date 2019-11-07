@@ -155,7 +155,6 @@ void sendDataOverUart(void) {
   Serial.println(values.getCurrentUVIFlashIdx() + values.uvi_idx);
  
   delay(5000); 
-  ledBlue.off();  
 }
 
 void takeMeasurements(void) {
