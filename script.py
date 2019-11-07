@@ -5,7 +5,6 @@ import csv
 # ask for input through terminal
 filename = input("Enter filename: ")
 
-h = ["CO2", "VOC", "UVI", "Steps"]
 
 f = open(filename)
 for line in f:
